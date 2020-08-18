@@ -1,5 +1,8 @@
 ### Importing and testing ggplot in R
 
+# Remove objects
+rm(list = ls())
+
 # Import ggplo2
 library(ggplot2)
 
