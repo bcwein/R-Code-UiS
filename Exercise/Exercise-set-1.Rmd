@@ -1,0 +1,67 @@
+---
+title: "Exercise set 1"
+output:
+  html_notebook: default
+  pdf_document: default
+---
+
+# Exercise 1
+
+Generate 1000 random numbers from uniform distrobution
+
+```{r}
+x <- runif(1000)
+```
+
+# Exercise 2
+
+```{r}
+hist(x)
+```
+# Exercise 3
+
+```{r}
+length(x[x>0.5])
+```
+# Exercise 4
+
+```{r}
+library(ggplot2)
+xx <- seq(from=0.0,to=2*pi,by=0.001)
+ggplot(data.frame(x=xx), aes(xx)) + 
+  stat_function(fun=function(xx) sin(xx))
+```
+# Exercise 5
+
+```{r}
+polyroot(c(1, 2, 3))
+
+```
+# Exercise 6
+
+```{r}
+normal.mean.CI <- function(x){
+  xbar <- mean(x)
+  s <- sd(x)
+  n <- length(x)
+  tmp1 <- 1.96*s/sqrt(n)
+  ret <- c(xbar-tmp1,xbar+tmp1)
+  return(ret)
+}
+
+normal.mean.CI(runif(1000))
+```
+# Exercise 7
+
+```{r}
+fib_help <- function(a, b){
+    if(a < 10000) {
+        print(a)
+        return(fib_help(b, a+b))
+    }
+}
+
+
+fib(0, 1)
+```
+
