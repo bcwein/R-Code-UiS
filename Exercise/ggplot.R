@@ -48,3 +48,14 @@ ggplot(data = iris,
       ) +
         geom_violin() +
         coord_flip()
+
+
+# Plot MPG engine dislacement
+ggplot(mpg,
+       aes(
+          displ,
+          hwy
+          )
+      ) +
+      geom_point() +
+      facet_wrap(~ class)
