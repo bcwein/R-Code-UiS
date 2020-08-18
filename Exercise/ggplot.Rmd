@@ -1,0 +1,86 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+# Importing and testing ggplot in R
+
+## Remove objects
+```{r}
+rm(list = ls())
+```
+
+## Import ggplo2
+```{r}
+library(ggplot2)
+```
+
+## Plot iris data
+```{r}
+ggplot(data = iris, aes(x = Sepal.Length,
+                        y = Sepal.Width)) +
+                        geom_point()
+```
+
+## Plot Iris with color
+```{r}
+ggplot(data = iris, aes(Sepal.Length,
+                        Sepal.Width,
+                        color = Species,
+                        shape = Species)) +
+                        geom_point()
+```
+
+## Boxplot of Iris Dataset
+```{r}
+ggplot(data = iris,
+       aes(Species,
+           Sepal.Length
+           )
+       ) +
+       geom_boxplot()
+```
+
+## Violinplot of Iris Dataset
+```{r}
+ggplot(data = iris,
+       aes(Species,
+           Sepal.Length
+          )
+      ) +
+      geom_violin()
+```
+
+## Hororizontal plot boxplot
+```{r}
+ggplot(data = iris,
+       aes(Species,
+           Sepal.Length
+          )
+      ) +
+      geom_boxplot() +
+      coord_flip()
+```
+
+## Hororizontal plot violin
+```{r}
+ggplot(data = iris,
+       aes(Species,
+           Sepal.Length
+          )
+      ) +
+        geom_violin() +
+        coord_flip()
+```
+
+## Plot MPG engine dislacement
+```{r}
+ggplot(mpg,
+       aes(
+          displ,
+          hwy
+          )
+      ) +
+      geom_point() +
+      facet_wrap(~ class)
+```
