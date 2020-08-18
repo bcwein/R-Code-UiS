@@ -14,3 +14,37 @@ ggplot(data = iris, aes(Sepal.Length,
                         color = Species,
                         shape = Species)) +
                         geom_point()
+
+# Boxplot of Iris Dataset
+ggplot(data = iris,
+       aes(Species,
+           Sepal.Length
+           )
+       ) +
+       geom_boxplot()
+
+# Violinplot of Iris Dataset
+ggplot(data = iris,
+       aes(Species,
+           Sepal.Length
+          )
+      ) +
+      geom_violin()
+
+# Hororizontal plot boxplot
+ggplot(data = iris,
+       aes(Species,
+           Sepal.Length
+          )
+      ) +
+      geom_boxplot() +
+      coord_flip()
+
+# Hororizontal plot violin
+ggplot(data = iris,
+       aes(Species,
+           Sepal.Length
+          )
+      ) +
+        geom_violin() +
+        coord_flip()
