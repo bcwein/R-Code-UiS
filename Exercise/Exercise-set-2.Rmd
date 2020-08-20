@@ -10,24 +10,13 @@ This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute
 
 This notebook is shows my solution to the exercise sheet for week 35 in STA510 course at the University of Stavanger.
 
-<<<<<<< HEAD
-# Exercise 1
-=======
 # Problem 1
->>>>>>> Exercise1
 
-Consider the experiment offipping an unbiased coin 5 independent times. Let H denote
-the outcome "head" and T to denote "tails".
+Consider the experiment of flipping an unbiased coin 5 independent times. Let H 
+denote the outcome "head" and T to denote "tails".
 
 \begin{enumerate}
   \item Compute the probability of HHTHT and THHHT.
-<<<<<<< HEAD
-\end{enumerate}
-
-```{r}
-
-```
-=======
   \newcounter{enumTemp}
   \setcounter{enumTemp}{\theenumi}
 \end{enumerate}
@@ -325,4 +314,3 @@ F3 <- function(x) {
 x <- seq(0, 1, 0.01)
 plot(x, F3(x), type="l", col= "blue")
 ```
->>>>>>> Exercise1
