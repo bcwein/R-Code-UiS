@@ -216,9 +216,101 @@ expected(f1, c(1,2,3,4))
 expected(f2, c(1,2,3,4))
 ```
 
+## Funcion for expected value with $g(x)$
+
+```{r}
+gexpected <- function(func, vec, gvec)
+  return(sum(gvec * func(vec)))
+``` 
+
 ## Expected value $E(g(x))
 
 ```{r}
-expected(f1, c(1,2,3,4)^3)
-expected(f2, c(1,2,3,4)^3)
+gexpected(f1, c(1,2,3,4), c(1,2,3,4)^3)
+gexpected(f2, c(1,2,3,4), c(1,2,3,4)^3)
+```
+
+# Problem 4
+
+## a)
+
+Calculate $P(X < 0.5)$
+
+$P(X < 0.5)$ is calculated using the integral
+
+\begin{equation}
+\int_{-\infty}^{0.5} f(x) dx
+\end{equation}
+
+where $f(x)$ is the probability density function for $X$
+
+### Calculate $P(X < 0.5)$ in R
+```{r}
+f3 <- function(x) {
+  if (x >= 0 && x <= 1) {
+    return(4*x*(1 - x^2))
+  } else {
+    return(0)
+  } 
+}
+
+
+integrate(Vectorize(f3),
+         lower=-Inf,
+         upper=0.5)$value
+```
+
+### Calculate E(X)
+
+```{r}
+integrate(Vectorize(function(x) x * f3(x)),
+          lower = -Inf,
+          upper = Inf)$value
+```
+### Calculate Var(X)
+
+```{r}
+integrate(Vectorize(function(x) x^2 * f3(x)),
+          lower = -Inf,
+          upper = Inf)$value
+```
+### Calculate SD(X)
+
+```{r}
+sqrt(integrate(Vectorize(function(x) x^2 * f3(x)),
+          lower = -Inf,
+          upper = Inf)$value)
+```
+
+## b) Calculate $P(X < 0.7)$ and $P(X > 7)$
+
+### $P(X < 0.7)$
+```{r}
+integrate(Vectorize(f3),
+         lower=-Inf,
+         upper=0.7)$value
+```
+
+### $P(X < 0.7)$
+```{r}
+1 - integrate(Vectorize(f3),
+              lower=-Inf,
+              upper=0.7)$value
+```
+## c) Plot $f(x)$
+
+```{r}
+x <- seq(0, 1, 0.01)
+plot(x, f3(x), type="l", col= "blue")
+```
+
+## c) Plot $F(x)$
+
+```{r}
+F3 <- function(x) {
+  return(-4*((x^4 / 4)-(x^2 / 2)))
+}
+
+x <- seq(0, 1, 0.01)
+plot(x, F3(x), type="l", col= "blue")
 ```
