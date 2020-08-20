@@ -195,9 +195,30 @@ barplot(f2(0:3),ylab="Relative frequency", xlab="x")
 we see that the function is a valid pmf since:
 
 ```{r}
-sum(f(-100:100))
+sum(f2(-100:100))
 ```
 
 # Problem 3
 For the probability distributions in problem 2 find $E(X)$ and $E(g(X))$ with 
 $g(x) = x^3$.
+
+## Function for expected value
+
+```{r}
+expected <- function(func, vec)
+  return(sum(vec * func(vec)))
+``` 
+
+## Expected value of f1 and f2
+
+```{r}
+expected(f1, c(1,2,3,4))
+expected(f2, c(1,2,3,4))
+```
+
+## Expected value $E(g(x))
+
+```{r}
+expected(f1, c(1,2,3,4)^3)
+expected(f2, c(1,2,3,4)^3)
+```
