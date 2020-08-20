@@ -1,0 +1,120 @@
+---
+title: "Exercise set 1 - Week 35"
+author: "Bjørn Christian Weinbach"
+date: 20.08.2020
+output:
+  pdf_document: default
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+This notebook is shows my solution to the exercise sheet for week 35 in STA510 course at the University of Stavanger.
+
+# Problem 1
+
+Consider the experiment offipping an unbiased coin 5 independent times. Let H denote
+the outcome "head" and T to denote "tails".
+
+\begin{enumerate}
+  \item Compute the probability of HHTHT and THHHT.
+  \newcounter{enumTemp}
+  \setcounter{enumTemp}{\theenumi}
+\end{enumerate}
+
+We have two events, HHTHT and THHHT which are two events in the sample space of
+all possible outcomes of 5 coin flips, the probability $P(\text{HHTHT}) / n$ 
+where $n$ is all possible outcomes.
+
+$n$ can be calculated using the \textbf{fundemental counting principle} which 
+gives us:
+
+\begin{equation}
+n = 2*2*2*2*2 = 2^5 = 32
+\end{equation}
+
+Therefore, for each of the two events above, the probability of one of them
+occuring is $1/32$.
+
+\begin{enumerate}
+  \setcounter{enumi}{\theenumTemp}
+  \item \label{simulation} Modify the R-code from the number of heads example
+  in the lectures to simulate the probability of three heads occurring in the 5 trials.
+  \setcounter{enumTemp}{\theenumi}
+\end{enumerate}
+
+## Function for simulationg number of heads
+```{r}
+# Simulate the number of heads in k throws of a dice repeated Nsim times
+# We let 0 correspond to tail and 1 correspond to head,
+# The sample()-command below randomly draw a 0 or 1 with 
+# equal probability k times, and then sum() will summarize the number of heads
+simheads <- function(Nsim,k){
+  nheads <- vector(length=Nsim) # Define a vector to store the number of heads 
+  for(i in 1:Nsim)              # Generate the number of heads Nsim times
+    nheads[i] <- sum(sample(0:1,size=k,replace=TRUE))  # See explanation above
+  return(nheads)                # Return the resulting vector
+}
+```
+## Simulate and plot barplot
+```{r}
+# Summarize the results by histograms and numbers
+# Repeat the lines below many times for different numbers of Nsim and k
+# What happens when Nsim gets large?
+k <- 5
+Nsim <- 1000
+nheadsim <- simheads(Nsim=Nsim,k=k)
+relfreq <- table(nheadsim)/Nsim # Calculate relative frequency for each outcome
+relfreq
+barplot(relfreq,ylab="Relative frequency")
+```
+## Exact probability
+We introduce the random variable $X = \text{number of heads}$. The exact
+probability $P(X = 3)$ is calculated using the binomial distribution with
+parameters $n = 3$ and $p = 0.5$.
+
+In R, this is done so:
+
+```{r}
+x <- dbinom(3, size=5, prob=0.5)
+print(x)
+```
+Which tells us that the probability of getting 3 heads out of 5 coin tosses
+is 31.25 \%.
+
+\begin{enumerate}
+  \setcounter{enumi}{\theenumTemp}
+  \item Redo point \ref{simulation} for a biased coin for which the probability
+  of heads is 0.6.
+  \setcounter{enumTemp}{\theenumi}
+\end{enumerate}
+
+## Biased function
+```{r}
+# Same function as above but with a biased coin. b is bias variable
+simbias <- function(Nsim,k,b){
+  nheads <- vector(length=Nsim) # Define a vector to store the number of heads
+  for(i in 1:Nsim)              # Generate the number of heads Nsim times
+    nheads[i] <- sum(sample(0:1,size=k,replace=TRUE, prob=c(1-b, b)))
+  return(nheads)                # Return the resulting vector
+}
+```
+
+## Simulate and summarise
+
+```{r}
+# Summarize the results by histograms and numbers
+# Repeat the lines below many times for different numbers of Nsim and k
+# What happens when Nsim gets large?
+k <- 5
+Nsim <- 1000
+b <- 0.6
+nheadsim <- simbias(Nsim=Nsim,k=k,b=b)
+relfreq <- table(nheadsim)/Nsim # Calculate relative frequency for each outcome
+relfreq
+barplot(relfreq,ylab="Relative frequency")
+```
+```
+
+# Problem 1
+
+asdasdasd
