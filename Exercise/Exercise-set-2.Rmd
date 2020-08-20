@@ -1,0 +1,24 @@
+---
+title: "Exercise set 1 - Week 35"
+author: "Bjørn Christian Weinbach"
+date: 20.08.2020
+output:
+  pdf_document: default
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+This notebook is shows my solution to the exercise sheet for week 35 in STA510 course at the University of Stavanger.
+
+# Exercise 1
+
+Consider the experiment offipping an unbiased coin 5 independent times. Let H denote
+the outcome "head" and T to denote "tails".
+
+\begin{enumerate}
+  \item Compute the probability of HHTHT and THHHT.
+\end{enumerate}
+
+```{r}
+
+```
