@@ -113,8 +113,91 @@ relfreq <- table(nheadsim)/Nsim # Calculate relative frequency for each outcome
 relfreq
 barplot(relfreq,ylab="Relative frequency")
 ```
+
+# Problem 2
+
+For each of the following, determine the constant c such that f(x) satises the
+condition of being the probability mass function (pmf) for a discrete random 
+variable X, and then depict each f(x) as a bar graph:
+
+## a)
+Given the function
+
+\begin{equation}
+f(x) = x/c, \quad x = 1,2,3,4
+\end{equation}
+
+for the function qualify as a pmf the constant $c$ should have a value such that
+
+\begin{equation}
+\sum_{i = 1}^{4} f(x_i) = 1
+\end{equation}
+
+Therefore, c can be calculated as follows
+
+\begin{equation}
+1/c + 2/c + 3/c + 4/c = 1 \implies c = 10
+\end{equation}
+
+## The function i R
+```{r}
+# Define f1(x)
+# The function takes in a vecor and checks if it is valid
+# function calculates pmf
+f1 <- function(x) {
+  ifelse(x %in% c(1, 2, 3, 4),
+         x/10,
+         0)
+}
+
+barplot(f1(1:4),ylab="Relative frequency", xlab="x")
+```
+we see that the function is a valid pmf since:
+
+```{r}
+sum(f1(-100:100))
 ```
 
-# Problem 1
+## b)
 
-asdasdasd
+Given the function
+
+\begin{equation}
+f(x) = c(x + 1)^2, \quad x = 0,1,2,3
+\end{equation}
+
+for the function qualify as a pmf the constant $c$ should have a value such that
+
+\begin{equation}
+\sum_{i = 0}^{3} f(x_i) = 1
+\end{equation}
+
+Therefore, c can be calculated as follows
+
+\begin{equation}
+c + 4c + 9c = 1 \implies c = 1/14
+\end{equation}
+
+## The function in R
+```{r}
+# Define f2(x)
+# The function takes in a vector and checks if it is valid
+# function calculates pmf
+f2 <- function(x) {
+  ifelse(x %in% c(1, 2, 3, 4),
+         (1/14)*(x + 1),
+         0)
+}
+
+barplot(f2(0:3),ylab="Relative frequency", xlab="x")
+```
+
+we see that the function is a valid pmf since:
+
+```{r}
+sum(f(-100:100))
+```
+
+# Problem 3
+For the probability distributions in problem 2 find $E(X)$ and $E(g(X))$ with 
+$g(x) = x^3$.
