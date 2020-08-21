@@ -314,3 +314,83 @@ F3 <- function(x) {
 x <- seq(0, 1, 0.01)
 plot(x, F3(x), type="l", col= "blue")
 ```
+
+# Problem 5
+
+Let X be a continuous random variable with pdf
+
+\begin{equation}
+f(x) =  \left\{
+          \begin{array}{ll} k(1 - x^2) \quad ,-1 \leq x \leq 1 \\ 
+          0 \quad \text{otherwise} \end{array}
+        \right. 
+\end{equation}
+
+where k is a constant.
+
+a. Determine k and make a sketch of f(x) in R.
+
+to determine k, we use the fact that $f(x)$ is a pdf which implies that the
+following integral
+
+\begin{equation}
+\int_{-\infty}^{\infty} f(x) dx = 1
+\end{equation}
+
+since the pdf is 0 for all x besides $x \in [-1, 1]$ we calculate
+
+\begin{equation}
+k \int_{-1}^{1} (1 - x^2) dx = k[1 - \frac{1}{3} + 1 - \frac{1}{3}]
+= \frac{4}{3}k = 1 \implies k = \frac{3}{4}
+\end{equation}
+
+This can also be validated in R
+
+```{r}
+f4 <- function(x) {
+  return(3/4 * (1 - x^2))
+}
+
+integrate(f4,
+          lower = -1,
+          upper = 1)$value
+```
+## Plot $f(x)$
+
+```{r}
+x <- seq(-1, 1, 0.01)
+plot(x, f4(x), type="l", col= "blue")
+```
+
+b. Calculate $P(X < 0.5)
+
+```{r}
+integrate(f4,
+          lower = -1,
+          upper = 0.5)$value
+```
+c. Let $Y = 1 + x^2$ Calculate $E(Y)$
+
+We know from Theorem 4.5 in Walpole, Ronald E., et al.
+
+\begin{equation}
+E(aX + b) = aE(X) + b
+\end{equation}
+
+This gives us that
+
+\begin{equation}
+E(Y) = E(aX^2 + b) = aE(X^2) + b 
+\end{equation}
+
+```{r}
+# Function for linear combination of random variable
+expectedLinearComb <- function(g, f, lower, upper, a, b) {
+  return (a*integrate(Vectorize(function(x) g(x) * f(x)),
+          lower = lower,
+          upper = upper)$value + b)
+}
+
+g <- function(x) x^2
+expectedLinearComb(g, f4, -1, 1, 1, 1)
+```
