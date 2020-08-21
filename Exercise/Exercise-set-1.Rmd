@@ -461,15 +461,40 @@ b. Let us now imagine that the test goes on and on (with more than 10 persons
 if necessary) and let N be the number of persons needed for the first correct 
 identification. What kind of distribution does N have and what is E(N)?
 
-This is example follows the properties for a negative binomial distrobution.
+This is example follows the properties for a negative binomial distribution.
 
-We calculate the expected value in R
+Negative Binomial Distrobution has a infinite number of elements, since there is
+always a possibility, though an unlikely one, that we need N trials until
+success where N approaches infinity.
+
+# Problem 8
+ 
+The height of Norwegian men in their twenties follows a normal distribution with
+mean 180 cm and standard deviation 6.5 cm.
+
+Use the R function pnorm to calculate the following probabilities:
+
+a. The probability that at man has a height of less than 175.
 
 ```{r}
-#E(X) of random variable X that has a negative binomial distrobution.
-f5 = function(x) dnbinom(x, size=1, prob=0.2)
-# Calculate E(X)
-f5(2)
+# Calculate P(X < 175cm)
+pnorm(175, mean = 180, sd = 6.5, lower.tail = TRUE, log.p = FALSE)
+```
+b. The probability that at man has a height of more than 190.
+```{r}
+# Calculate P(X > 190cm)
+pnorm(190, mean = 180, sd = 6.5, lower.tail = FALSE, log.p = FALSE)
+```
+c. The probability that at man has a height between 170 to 180.
 
-# this can not be in R since it is a infinite series
+```{r}
+# Calculate P(170cm < X < 180cm)
+pnorm(180, mean = 180, sd = 6.5, lower.tail = TRUE, log.p = FALSE) -
+pnorm(170, mean = 180, sd = 6.5, lower.tail = TRUE, log.p = FALSE)
+```
+d. The height which is such that only 1% of the men have a higher height.
+Problem
+
+```{r}
+qnorm(0.99, mean = 180, sd = 6.5, lower.tail = TRUE, log.p = FALSE)
 ```
