@@ -498,3 +498,43 @@ Problem
 ```{r}
 qnorm(0.99, mean = 180, sd = 6.5, lower.tail = TRUE, log.p = FALSE)
 ```
+
+# Problem 9
+
+```{r}
+# All random variables has same expected value
+
+ex = 0.4
+ey = 0.4
+ez = 0.4
+vx = 0.1
+vy = 0.1
+vz = 0.1
+corxy = 0 
+corxz = 0.5
+coryz = -0.5
+
+# 2X
+e2x = ex+ex
+e2x
+v2x = vx + vx
+v2x
+
+# X + Y
+exy = 2*ex
+exy
+vxy = vx + vy + 2*(corxy/(sqrt(vx)*sqrt(vy)))
+vxy
+
+# X + Z
+exz = ex + ez
+exz
+vxz = vx + vx + 2*(corxz/(sqrt(vx)*sqrt(vz)))
+vxz
+
+# Y + Z
+eyz = ey + ez
+eyz
+vyz = vy + vx + 2*(coryz/(sqrt(vy)*sqrt(vz)))
+vyz
+```
