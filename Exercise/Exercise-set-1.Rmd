@@ -10,6 +10,12 @@ This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute
 
 This notebook is shows my solution to the exercise sheet for week 35 in STA510 course at the University of Stavanger.
 
+# Import libraries
+
+```{r}
+library(ggplot2)    # Library for plotting
+```
+
 # Problem 1
 
 Consider the experiment of flipping an unbiased coin 5 independent times. Let H 
@@ -393,4 +399,17 @@ expectedLinearComb <- function(g, f, lower, upper, a, b) {
 
 g <- function(x) x^2
 expectedLinearComb(g, f4, -1, 1, 1, 1)
+```
+# Problem 6
+
+```{r}
+xi = c(13.89, 13.39, 12.20, 14.35, 14.10, 13.39, 13.96, 14.15, 13.69, 12.57)
+yi = c(13.99, 13.39, 12.65, 14.25, 13.99, 13.09, 13.66, 14.25, 13.36, 12.57)
+
+df <- data.frame("X" = xi, "Y" = yi)
+
+ggplot(df, aes(x=X, y=Y)) + 
+geom_point(shape=18, color="blue")+
+geom_smooth(method=lm,  linetype="dashed",
+           color="darkred", fill="blue")
 ```
