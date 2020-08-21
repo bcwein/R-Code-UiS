@@ -409,7 +409,67 @@ yi = c(13.99, 13.39, 12.65, 14.25, 13.99, 13.09, 13.66, 14.25, 13.36, 12.57)
 df <- data.frame("X" = xi, "Y" = yi)
 
 ggplot(df, aes(x=X, y=Y)) + 
-geom_point(shape=18, color="blue")+
+geom_point(shape=18, color="red")+
 geom_smooth(method=lm,  linetype="dashed",
-           color="darkred", fill="blue")
+           color="blue", fill="blue")
+```
+
+
+## Calculate correlation
+
+```{r}
+cor(xi, yi)
+```
+
+# Problem 7
+
+10 people are trying to identify one pepsi out of 5 total sodas.
+Given the null-hypothesis that pepsi and cola taste the same, there is a 
+$\frac{1}{5}$ probability of choosing the correct one.
+
+The 10 experiments across 10 people are independent and can be seen as repeated
+trials. The variable $X$ is therefore a binomial distrobution with parmeters 
+$p=\frac{1}{5}$ and $n = 10$
+
+We do the calculations in R
+
+## R code calculating $P(X \leq 3)$
+
+```{r}
+# Calculate P(X >= 3)
+px = pbinom(3, size=10, prob=0.2, lower.tail = FALSE)
+print(px)
+```
+
+## R code calculating $E(X)$
+
+```{r}
+# Calculate E(X)
+f5 = function(x) dbinom(x, size=10, prob=0.2)
+mu = sum(0:10*f5(0:10))
+mu
+```
+
+## R code calculating $Var(X)$
+
+```{r}
+# Calculate Var(X)
+sum((0:10)**2 * f5(0:10)) - mu**2
+```
+
+b. Let us now imagine that the test goes on and on (with more than 10 persons 
+if necessary) and let N be the number of persons needed for the first correct 
+identification. What kind of distribution does N have and what is E(N)?
+
+This is example follows the properties for a negative binomial distrobution.
+
+We calculate the expected value in R
+
+```{r}
+#E(X) of random variable X that has a negative binomial distrobution.
+f5 = function(x) dnbinom(x, size=1, prob=0.2)
+# Calculate E(X)
+f5(2)
+
+# this can not be in R since it is a infinite series
 ```
