@@ -1,0 +1,39 @@
+---
+title: "Exercise set 2 - Week 36"
+author: "Bjørn Christian Weinbach"
+date: 25.08.2020
+output:
+  pdf_document: default
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute
+code within the notebook, the results appear beneath the code. 
+
+This notebook is shows my solution to the exercise sheet for week 35 in STA510
+course at the University of Stavanger.
+
+# Import libraries
+
+```{r}
+library(ggplot2)    # Library for plotting
+```
+
+# Problem 1
+
+Let $X$ be exponentially distributed with density function 
+$f(x) = \lambda e^{-\lambda x}$ for $x > 0$
+
+a. Make a sketch of this density (e.g. for $\lambda = 1$) and compute the expectation and the
+variance of $X$ as a function of $\lambda$.
+
+```{r}
+fexp <- function (x, lambda = 1) {
+  return(lambda * exp(1)^(-lambda*x))
+}
+
+x <- seq(0, 5, 0.01)
+plot(x, fexp(x, 1), type="l", col= "blue")
+
+exp = integrate(function(x) x*fexp(x), lower = 0, upper = Inf)
+exp
+```
