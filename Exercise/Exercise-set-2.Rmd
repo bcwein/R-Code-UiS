@@ -119,3 +119,127 @@ This gives us:
 P(X > 2 | X > 1) = \frac{P(X > 2 \cap X > 1)}{P(X > 1)} = 
 \frac{P(X > 2)}{P(X > 1)}
 \end{equation}
+
+```{r}
+a <- ppois(2, lambda = 2, lower.tail = FALSE, log = FALSE)
+b <- ppois(1, lambda = 2, lower.tail = FALSE, log = FALSE)
+s <- a/b
+s
+```
+
+# Problem 3
+
+```{r}
+betaf <- function(alfa) {
+  helpf <- function(t) {
+    t^(alfa - 1) * exp(1)^(-t)
+  }
+  
+  return(integrate(helpf, 0, Inf)$value)
+}
+
+f <- function(x, alfa, beta) {
+  return((betaf(alfa + beta) / betaf(alfa)*betaf(beta)) * x^(alfa - 1) * (1 - x)^(beta - 1))
+}
+```
+
+
+# $\alpha = \beta = 1$
+
+```{r}
+x<-seq(0, 1, 0.001); y1=f(x, 1, 1);
+
+plot(x, y1, col="red", type="l", xlab="x", ylab="pdf")
+```
+# $\alpha = 2 \beta = 1$
+
+```{r}
+x<-seq(0, 1, 0.001); y1=f(x, 2, 1);
+
+plot(x, y1, col="red", type="l", xlab="x", ylab="pdf")
+```
+
+
+# $\alpha = 1 \beta = 2$
+
+```{r}
+x<-seq(0, 1, 0.001); y1=f(x, 1, 2);
+
+plot(x, y1, col="red", type="l", xlab="x", ylab="pdf")
+```
+b. Draw samples and calculate sample mean and compare to expectation
+
+```{r}
+samp10_1_1 = sum(rbeta(10, 1, 1, ncp = 0)) / 10
+samp10_2_1 = sum(rbeta(10, 2, 1, ncp = 0)) / 10
+samp10_1_2 = sum(rbeta(10, 1, 2, ncp = 0)) / 10
+samp100_1_1 = sum(rbeta(100, 1, 1, ncp = 0)) / 100
+samp100_2_1 = sum(rbeta(100, 2, 1, ncp = 0)) / 100
+samp100_1_2 = sum(rbeta(100, 1, 2, ncp = 0)) / 100
+samp1000_1_1 = sum(rbeta(1000, 1, 1, ncp = 0)) / 1000
+samp1000_2_1 = sum(rbeta(1000, 2, 1, ncp = 0)) / 1000
+samp1000_1_2 = sum(rbeta(1000, 1, 2, ncp = 0)) / 1000
+samp10000_1_1 = sum(rbeta(10000, 1, 1, ncp = 0)) / 10000
+samp10000_2_1 = sum(rbeta(10000, 2, 1, ncp = 0)) / 10000
+samp10000_1_2 = sum(rbeta(10000, 1, 2, ncp = 0)) / 10000
+
+samp10_1_1
+samp10_2_1
+samp10_1_2
+samp100_1_1
+samp100_2_1
+samp100_1_2
+samp1000_1_1
+samp1000_2_1
+samp1000_1_2
+samp10000_1_1
+samp10000_2_1
+samp10000_1_2
+```
+
+# Problem 4
+
+b. Let n be 5, 20 and 100 and use as many replications in the simulation as you
+deem necessary to obtain a histogram that gives a good approximation to the 
+distribution for $X$.
+
+```{r}
+### Illustration of sum/averages of many throws of a dice
+
+# Remove old variables:
+rm(list=ls())
+
+sumrv <- function(Nsim, k){
+  rvsum <- vector(length=Nsim)
+  for(i in 1:Nsim)
+    rvsum[i] <- (sum(runif(k)*2) - k) / sqrt(k * (4/12)) 
+  return(rvsum)
+}
+
+a <- sumrv(10000, 5)
+m<-mean(a)
+std<-sqrt(var(a))
+hist(a, breaks=30, prob=TRUE) 
+curve(dnorm(x, mean=m, sd=std), 
+      col="darkblue", lwd=2, add=TRUE, yaxt="n")
+```
+
+
+```{r}
+b <- sumrv(10000, 20)
+m<-mean(b)
+std<-sqrt(var(b))
+hist(b, breaks=30, prob=TRUE) 
+curve(dnorm(x, mean=m, sd=std), 
+      col="darkblue", lwd=2, add=TRUE, yaxt="n")
+```
+
+
+```{r}
+c <- sumrv(10000, 100)
+m<-mean(c)
+std<-sqrt(var(c))
+hist(c, breaks=30, prob=TRUE) 
+curve(dnorm(x, mean=m, sd=std), 
+      col="darkblue", lwd=2, add=TRUE, yaxt="n")
+```
