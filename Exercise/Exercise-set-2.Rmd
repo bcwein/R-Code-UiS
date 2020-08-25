@@ -48,24 +48,74 @@ integrate(function(x) x*fexp(x, lambda = 4), 0, Inf)
 The lifetime of a type of light bulbs follows an exponential distribution with 
 expectation 10 000 hours.
 
-b. Calculate the probability that the lifetime of a light bulb is less than 
-10 000 hours.
+b. Let $X$ be the random variable for lifetime of a light bulb.
+Calculate the probability:
 
-## P(X < 10000)
+## $P(X < 10000)$
 
 ```{r}
 pexp(10000, rate = 1/10000, lower.tail = TRUE, log.p = FALSE)
 ```
 
-## P(X < 10000)
+## $P(X > 5000)$
 
 ```{r}
 pexp(5000, rate = 1/10000, lower.tail = FALSE, log.p = FALSE)
 ```
 
-## P(5000 < X < 10000)
+## $P(5000 < X < 10000)$
 
 ```{r}
-pexp(10000, rate = 1/10000, lower.tail = TRUE, log.p = TRUE) -
-pexp(5000, rate = 1/10000, lower.tail = TRUE, log.p = TRUE)
+pexp(10000, rate = 1/10000, lower.tail = TRUE, log.p = FALSE) -
+pexp(5000, rate = 1/10000, lower.tail = TRUE, log.p = FALSE)
 ```
+
+# Problem 2
+
+a. Calculate the probability that there will be exactly 2 accidents during one 
+year.
+
+Calculate the probability that there will be at least 3 accidents during one
+year.
+
+## $P(X = 2)$
+
+```{r}
+dpois(2, lambda = 2, log = FALSE)
+```
+## $P(X < 3)$
+
+```{r}
+ppois(3, lambda = 2, lower.tail = TRUE, log = FALSE)
+```
+b. Calculate the probability that there will be exactly 2 accidents during half 
+a year.
+
+2 accidents during half a year gives us $\lambda = 1$
+
+## $P(X = 2)$
+
+```{r}
+dpois(2, lambda = 1, log = FALSE)
+```
+c. Calculate the probability that there will be at least 20 accidents during ten
+years (Hint for the manual calculation: By the Central Limit Theorem a Poisson 
+distribution with expectation larger than 15 can be approximated by a normal 
+distribution with the same expectation and variance as the Poisson distribution)
+
+## $P(X < 20)$ when $\lambda = 20$
+
+```{r}
+ppois(20, lambda = 20, lower.tail = FALSE, log = FALSE)
+```
+
+
+d. Calculate the probability that there will be more than 2 accidents on this
+road during a year when we know that there has been at least one accident.
+
+This gives us:
+
+\begin{equation}
+P(X > 2 | X > 1) = \frac{P(X > 2 \cap X > 1)}{P(X > 1)} = 
+\frac{P(X > 2)}{P(X > 1)}
+\end{equation}
