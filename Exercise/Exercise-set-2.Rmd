@@ -31,9 +31,41 @@ fexp <- function (x, lambda = 1) {
   return(lambda * exp(1)^(-lambda*x))
 }
 
-x <- seq(0, 5, 0.01)
-plot(x, fexp(x, 1), type="l", col= "blue")
+x<-seq(0, 5, 0.01); y1=fexp(x, 1);
 
-exp = integrate(function(x) x*fexp(x), lower = 0, upper = Inf)
-exp
+plot(x, y1, col="red", type="l", xlab="x", ylab="pdf")
+```
+
+## Calculate E(X)
+
+```{r}
+integrate(function(x) x*fexp(x, lambda = 1), 0, Inf)
+integrate(function(x) x*fexp(x, lambda = 2), 0, Inf)
+integrate(function(x) x*fexp(x, lambda = 3), 0, Inf)
+integrate(function(x) x*fexp(x, lambda = 4), 0, Inf)
+```
+
+The lifetime of a type of light bulbs follows an exponential distribution with 
+expectation 10 000 hours.
+
+b. Calculate the probability that the lifetime of a light bulb is less than 
+10 000 hours.
+
+## P(X < 10000)
+
+```{r}
+pexp(10000, rate = 1/10000, lower.tail = TRUE, log.p = FALSE)
+```
+
+## P(X < 10000)
+
+```{r}
+pexp(5000, rate = 1/10000, lower.tail = FALSE, log.p = FALSE)
+```
+
+## P(5000 < X < 10000)
+
+```{r}
+pexp(10000, rate = 1/10000, lower.tail = TRUE, log.p = TRUE) -
+pexp(5000, rate = 1/10000, lower.tail = TRUE, log.p = TRUE)
 ```
