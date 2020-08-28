@@ -461,9 +461,9 @@ b. Let us now imagine that the test goes on and on (with more than 10 persons
 if necessary) and let N be the number of persons needed for the first correct 
 identification. What kind of distribution does N have and what is E(N)?
 
-This is example follows the properties for a negative binomial distribution.
+This is example follows the properties for a geometric distribution.
 
-Negative Binomial Distrobution has a infinite number of elements, since there is
+Geometric distribution has a infinite number of elements, since there is
 always a possibility, though an unlikely one, that we need N trials until
 success where N approaches infinity.
 
