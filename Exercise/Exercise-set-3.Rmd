@@ -116,6 +116,28 @@ mean(x)
 sum(x<0.5)/Nsim
 ```
 
+# Exercise 3.17
 
+```{r}
+# Samme funksjon uten print
+genfxdata <- function(Nsim){
+  k <- 0 # counter for accepted
+  j <- 0 # iterations
+  x <- numeric(Nsim) # vector for accepted
+  while(k<Nsim){
+    u <- runif(1)
+    j <- j+1
+    y <- runif(1,min=0,max=1) # proposal distribution
+    if(u < (12*y^2*(1-y))/(16/9) ){ # Then we accept
+      k <- k+1
+      x[k] <- y
+    }
+  return(x)
+}
 
+Niter <- 1000
+Nsim <- 5000
 
+system.time(for (i in 1:Niter)
+   genfxdata(Nsim=Nsim))
+```
