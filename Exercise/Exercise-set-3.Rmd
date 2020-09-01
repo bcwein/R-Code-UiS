@@ -82,62 +82,80 @@ distribution by the acceptance-rejection method. Sample size should be
 Beta(3,2) density.
 
 ``` {r}
-### Examples of acceptance-rejection sampling
-
-## Generating data from the density f(x)=12x^2(1-x) for 0<x<1
-# Using the uniform distribution as proposal distribution
-genfxdata <- function(Nsim){
-  k <- 0 # counter for accepted
-  j <- 0 # iterations
-  x <- numeric(Nsim) # vector for accepted
-  while(k<Nsim){
+## Function for acceptance rejection generation
+rejectionBeta <- function(a, b, x, n) {
+   f <- function(x) (x^(a-1)*(1-x)^(b-1) / beta(a, b))
+   g <- function(x) 1
+   C <- max(f(x)/g(x))
+   
+   naccepts <- 0
+   result.sample <- rep(NA, n)
+   
+   while (naccepts < n) {
+    y <- runif(1)
     u <- runif(1)
-    j <- j+1
-    y <- runif(1,min=0,max=1) # proposal distribution
-    if(u < (12*y^2*(1-y))/(16/9) ){ # Then we accept
-      k <- k+1
-      x[k] <- y
+   
+    if ( u <= f(y) / (C*g(y)) ) {
+      naccepts <- naccepts + 1
+      result.sample[naccepts] = y
     }
-  }
-  print(paste("Performed ",j,"iterations to simulate",Nsim,"data."))
-  return(x)
+   }
+   
+   result.sample
 }
 
-# Repeat the lines below for different values of Nsim
-Nsim <- 10000
-x <- genfxdata(Nsim=Nsim)
+
+# Sequence for x-axis
+x <- seq(0, 1, 0.01)
+# Sample from distribution
+result <- rejection(3, 2, x, 10000)
+
 # Histogram of simulated data with true density on top as red line
-hist(x, prob = TRUE,breaks=seq(0,1,length.out=max(10,sqrt(Nsim))),
+hist(result, prob = TRUE,breaks=seq(0,1,length.out=max(10,sqrt(Nsim))),
      main="Histogram of data and true density")
-curve(12*x^2*(1-x), col = "red", lty = 2, lwd = 2, add = TRUE,xlim=c(0,1))
-# Mean of the data
-mean(x)
-# P(X<0.5)
-sum(x<0.5)/Nsim
+curve(f(x), col = "red", lty = 2, lwd = 2, add = TRUE,xlim=c(0,1))
 ```
 
 # Exercise 3.17
+## a = 3, b = 2
 
 ```{r}
-# Samme funksjon uten print
-genfxdata <- function(Nsim){
-  k <- 0 # counter for accepted
-  j <- 0 # iterations
-  x <- numeric(Nsim) # vector for accepted
-  while(k<Nsim){
-    u <- runif(1)
-    j <- j+1
-    y <- runif(1,min=0,max=1) # proposal distribution
-    if(u < (12*y^2*(1-y))/(16/9) ){ # Then we accept
-      k <- k+1
-      x[k] <- y
-    }
-  return(x)
-}
-
 Niter <- 1000
 Nsim <- 5000
 
 system.time(for (i in 1:Niter)
-   genfxdata(Nsim=Nsim))
+   rejection(3, 2, x, Nsim))
+
+system.time(for (i in 1:Niter)
+   rbeta(Nsim, shape1=3, shape2=2))
 ```
+
+## a = 1, b = 1
+
+```{r}
+Niter <- 1000
+Nsim <- 5000
+
+system.time(for (i in 1:Niter)
+   rejection(1, 1, x, Nsim))
+
+system.time(for (i in 1:Niter)
+   rbeta(Nsim, shape1=1, shape2=1))
+```
+
+
+# Exercise 1
+
+a. Simulate the probability that component 1 and component 2 is working.
+
+```{r}
+n <- 10
+m <- 10000
+mat <- matrix(rbinom(n*m, 1, c(0.7,0.95,0.95,0.95,0.99,0.99,0.92,0.92,0.92,0.7)), n, m)
+p <- numeric(4)
+p[1] <- sum(mat[2, 0:m] * mat[1, 0:m]) / (2*m)
+p[2] <- sum(mat[2, 0:m] + mat[1, 0:m]) / (2*m)
+p[3] <- 
+p
+```
+
