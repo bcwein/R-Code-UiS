@@ -72,3 +72,50 @@ dfx2 <- sample(0:4,size=Nsim,replace=TRUE,prob=c(0.1,0.2,0.2,0.2,0.3))
 relfreq <- table(dfx2)/Nsim
 barplot(relfreq,ylab="Relative frequency - Sample method")
 ```
+
+
+# Exercise 3.7
+
+Write a function to generate a random sample of size n from the beta(a,b)
+distribution by the acceptance-rejection method. Sample size should be
+1000 from the beta(3,2) distribution. Graph the sample with the theoretical
+Beta(3,2) density.
+
+``` {r}
+### Examples of acceptance-rejection sampling
+
+## Generating data from the density f(x)=12x^2(1-x) for 0<x<1
+# Using the uniform distribution as proposal distribution
+genfxdata <- function(Nsim){
+  k <- 0 # counter for accepted
+  j <- 0 # iterations
+  x <- numeric(Nsim) # vector for accepted
+  while(k<Nsim){
+    u <- runif(1)
+    j <- j+1
+    y <- runif(1,min=0,max=1) # proposal distribution
+    if(u < (12*y^2*(1-y))/(16/9) ){ # Then we accept
+      k <- k+1
+      x[k] <- y
+    }
+  }
+  print(paste("Performed ",j,"iterations to simulate",Nsim,"data."))
+  return(x)
+}
+
+# Repeat the lines below for different values of Nsim
+Nsim <- 10000
+x <- genfxdata(Nsim=Nsim)
+# Histogram of simulated data with true density on top as red line
+hist(x, prob = TRUE,breaks=seq(0,1,length.out=max(10,sqrt(Nsim))),
+     main="Histogram of data and true density")
+curve(12*x^2*(1-x), col = "red", lty = 2, lwd = 2, add = TRUE,xlim=c(0,1))
+# Mean of the data
+mean(x)
+# P(X<0.5)
+sum(x<0.5)/Nsim
+```
+
+
+
+
