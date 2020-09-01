@@ -6,9 +6,11 @@ output:
   pdf_document: default
 ---
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. 
+When you execute code within the notebook, the results appear beneath the code. 
 
-This notebook is shows my solution to the exercise sheet for week 35 in STA510 course at the University of Stavanger.
+This notebook is shows my solution to the exercise sheet for week 35 in STA510 
+course at the University of Stavanger.
 
 # Import libraries
 
@@ -70,7 +72,6 @@ k <- 5
 Nsim <- 1000
 nheadsim <- simheads(Nsim=Nsim,k=k)
 relfreq <- table(nheadsim)/Nsim # Calculate relative frequency for each outcome
-relfreq
 barplot(relfreq,ylab="Relative frequency")
 ```
 ## Exact probability
@@ -116,7 +117,6 @@ Nsim <- 1000
 b <- 0.6
 nheadsim <- simbias(Nsim=Nsim,k=k,b=b)
 relfreq <- table(nheadsim)/Nsim # Calculate relative frequency for each outcome
-relfreq
 barplot(relfreq,ylab="Relative frequency")
 ```
 

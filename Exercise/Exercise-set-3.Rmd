@@ -1,0 +1,75 @@
+---
+title: "Exercise set 3"
+output: pdf_document
+author: Bjørn Christian Weinbach
+date: 01.09.2020
+---
+
+# Exercise 3.3
+
+The Pareto(a, b) distribution has cdf
+\begin{equation}
+  F(x) = 1 - \frac{b^a}{x^a}
+\end{equation}
+
+Derive the probability inverse transformation $F^{-1}(U)$ and use the inverse
+transform method to to simulate a random sample from the Pareto(2, 2) dist.
+
+The function $F^{-1}$ is derived by setting $F(X) = U$ and solving for X which
+gives us.
+
+\begin{equation}
+  U = 1 - \frac{4}{x^2} \implies X = \frac{2}{\sqrt{(1-u)}}
+\end{equation}
+
+and this we have $F^{-1}(U) = \frac{2}{\sqrt{(1-u)}}$
+
+and in general terms $F^{-1}(U) = \frac{2}{\sqrt{(1-u)}}$
+
+## Calculate using R
+
+```{r}
+simPareto <- function(nSim, a, b) {
+  u <- runif(nSim)
+  return(b*(1-u)^(-1/a))
+}
+
+nSim = 1000000
+ParetoFx <- simPareto(nSim = nSim, a = 2, b = 2)
+hist(ParetoFx, breaks=30, prob=TRUE)
+```
+
+
+# Exercise 3.5
+
+Use the inverse transform method to generate a random sample of size from
+distribution
+
+```{r}
+# Alternatively the built in sample function can be used 
+## Generating data from the number of heads example where 
+## f(0)=1/8, f(1)=3/8, f(2)=3/8 and f(3)=1/8
+
+# Function for simulating number of heads according to the distribution above
+discrv <- function(Nsim){
+   U <- runif(Nsim)
+   X <- rep(0,Nsim)
+   X[(U>0.1) & (U<=0.3)] <- 1
+   X[(U>0.3) & (U<=0.5)] <- 2
+   X[(U>0.5) & (U<=0.7)] <- 3
+   X[U>0.7] <- 4
+   return(X)
+}
+
+Nsim <- 10000
+
+dfx <- discrv(Nsim)
+relfreq <- table(dfx)/Nsim
+relfreq
+barplot(relfreq,ylab="Relative frequency")
+
+# Alternatively the built in sample function can be used 
+dfx2 <- sample(0:4,size=Nsim,replace=TRUE,prob=c(0.1,0.2,0.2,0.2,0.3))
+relfreq <- table(dfx2)/Nsim
+relfreq
+```
