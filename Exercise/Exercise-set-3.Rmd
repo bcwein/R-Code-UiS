@@ -172,4 +172,70 @@ p[4] <- sum(colSums(mat) < 7) / s
 ```
 ### Calculated probabilities
 ```{r}
+p
+```
+
+
+# Exercise 2
+Simulate $P(X > 8 | field found)
+```{r}
+ptri <- function(x, a, b, c) {
+  if (!all(a <= c && c <= b && a < b)) stop("It must be that a ≤ c ≤ b and a < b!");
+
+  ifelse(x > a & x < b,
+		 ifelse(x <= c,
+				((x-a)^2)/((b-a)*(c-a)),
+				1-((b-x)^2)/((b-a)*(b-c))),
+		 ifelse(x <= a,
+				0,
+				1))
+}
+
+
+qtri <- function(p, a, b, c) {
+  if (!all(a <= c && c <= b && a < b)) stop("It must be that a ≤ c ≤ b and a < b!");
+
+  ifelse(p > 0 & p < 1,
+		 ifelse(p <= ptri(c, a, b, c),
+				a+sqrt((a^2-a*b-(a-b)*c)*p),
+				b-sqrt(b^2-a*b+(a-b)*c+(a*b-b^2-(a-b)*c)*p)),
+		 NA)
+}
+
+rtri <- function(n, a, b, c) {
+  if (!all(a <= c && c <= b && a < b)) stop("It must be that a ≤ c ≤ b and a < b!");
+  qtri(runif(n, min = 0, max = 1), a, b, c)
+}
+
+
+simTriangle <- function(x, min, max, mode) {
+   return(rtri(x, a = min, b = max, c = mode))
+}
+
+simConPx <- function (x, n) {
+   nSim <- n
+   sims <- simTriangle(nSim, 2, 10, 6)
+    return(sum(sims >= x) / nSim)
+}
+
+simConPx(8, 10000)
+```
+## Simulate unconditional probability
+
+```{r}
+uncSimTriangle <- function(x, nSim, min, max, mode) {
+   size <- vector(length = nSim)
+   for(i in 1:Nsim) {
+      a <- runif(1)
+      if(a < 0.4)
+         size[i] <- rtri(1, a = min, b = max, c = mode)
+      else
+         size[i] <- 0
+   }
+   
+    return(size)
+}
+
+a <- runif(1)
+a
 ```
