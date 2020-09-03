@@ -177,65 +177,72 @@ p
 
 
 # Exercise 2
-Simulate $P(X > 8 | field found)
+
+a. Find conditional and unconditional probability of find larger than 8 
+
+Simulate $P(X > 8 | field found) using inverse transform method
 ```{r}
-ptri <- function(x, a, b, c) {
-  if (!all(a <= c && c <= b && a < b)) stop("It must be that a ≤ c ≤ b and a < b!");
-
-  ifelse(x > a & x < b,
-		 ifelse(x <= c,
-				((x-a)^2)/((b-a)*(c-a)),
-				1-((b-x)^2)/((b-a)*(b-c))),
-		 ifelse(x <= a,
-				0,
-				1))
+triangle <- function(n, a, b, c) {
+  f <- function (x) {
+    return((c-a)/(b-a))
+  }
+  u <- runif(n)
+  sample <- ifelse(u < f(c),
+         a + sqrt(u*(b-a)*(c-a)), 
+         b - sqrt((1-u)*(b-a)*(b-c)) 
+        )
+  return(sample)
 }
 
 
-qtri <- function(p, a, b, c) {
-  if (!all(a <= c && c <= b && a < b)) stop("It must be that a ≤ c ≤ b and a < b!");
+sims <- 10000
+a <- 2
+b <- 10
+c <- 6
 
-  ifelse(p > 0 & p < 1,
-		 ifelse(p <= ptri(c, a, b, c),
-				a+sqrt((a^2-a*b-(a-b)*c)*p),
-				b-sqrt(b^2-a*b+(a-b)*c+(a*b-b^2-(a-b)*c)*p)),
-		 NA)
-}
-
-rtri <- function(n, a, b, c) {
-  if (!all(a <= c && c <= b && a < b)) stop("It must be that a ≤ c ≤ b and a < b!");
-  qtri(runif(n, min = 0, max = 1), a, b, c)
-}
-
-
-simTriangle <- function(x, min, max, mode) {
-   return(rtri(x, a = min, b = max, c = mode))
-}
-
-simConPx <- function (x, n) {
-   nSim <- n
-   sims <- simTriangle(nSim, 2, 10, 6)
-    return(sum(sims >= x) / nSim)
-}
-
-simConPx(8, 10000)
+vals <- triangle(sims, 2, 10, 6)
+p1 <- sum(vals > 8) / sims
+p2 <- p1 * 0.4
 ```
-## Simulate unconditional probability
+
+b. By simulation nd the risk-weighted and the non risk-weighted expectation
+for the total resource R
 
 ```{r}
-uncSimTriangle <- function(x, nSim, min, max, mode) {
-   size <- vector(length = nSim)
-   for(i in 1:Nsim) {
-      a <- runif(1)
-      if(a < 0.4)
-         size[i] <- rtri(1, a = min, b = max, c = mode)
-      else
-         size[i] <- 0
-   }
-   
-    return(size)
-}
+sims <- 10000
 
-a <- runif(1)
-a
+n1 <- sum(triangle(sims, 2, 6, 4) / sims)
+n2 <- sum(triangle(sims, 3, 11, 7) / sims)
+n3 <- sum(triangle(sims, 2, 6, 4) / sims)
+n4 <- sum(triangle(sims, 1, 9, 5) / sims)
+n5 <- sum(triangle(sims, 8, 10, 9) / sims)
+n6 <- sum(triangle(sims, 5, 9, 7) / sims)
+n7 <- sum(triangle(sims, 2, 6, 4) / sims)
+n8 <- sum(triangle(sims, 3, 5, 4) / sims)
+n9 <- sum(triangle(sims, 8, 12, 10) / sims)
+n10 <- sum(triangle(sims, 3, 7, 5) / sims)
+
+mat <- matrix(0, 10, 2)
+mat[1,] <- c(n1, n1*0.8)
+mat[2,] <- c(n2, n2*0.3)
+mat[3,] <- c(n3, n3*0.6)
+mat[4,] <- c(n4, n4*0.6)
+mat[5,] <- c(n5, n5*0.5)
+mat[6,] <- c(n6, n6*0.9)
+mat[7,] <- c(n7, n7*0.5)
+mat[8,] <- c(n8, n8*0.8)
+mat[9,] <- c(n9, n9*0.4)
+mat[10,] <- c(n10, n10*0.4)
+
+c(sum(mat[,1]), sum(mat[,2]))
 ```
+
+d. By simulation nd an estimate of the accompanying standard deviation for the 
+two expectations. Find how many replications are necessary to be 95% certain 
+that the errors in the estimates of the means are not exceeding 0.2.
+
+we use the equation;
+
+\begin{equation}
+r = 2*sqrt(Var(X) / n)
+\end{equation}
