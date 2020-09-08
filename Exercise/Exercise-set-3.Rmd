@@ -34,7 +34,7 @@ simPareto <- function(nSim, a, b) {
   return(b*(1-u)^(-1/a))
 }
 
-nSim = 1000000
+nSim = 1000
 ParetoFx <- simPareto(nSim = nSim, a = 2, b = 2)
 hist(ParetoFx, breaks=30, prob=TRUE)
 ```
@@ -205,12 +205,10 @@ p1 <- sum(vals > 8) / sims
 p2 <- p1 * 0.4
 ```
 
-b. By simulation nd the risk-weighted and the non risk-weighted expectation
+b. By simulation and the risk-weighted and the non risk-weighted expectation
 for the total resource R
 
 ```{r}
-sims <- 10000
-
 n1 <- sum(triangle(sims, 2, 6, 4) / sims)
 n2 <- sum(triangle(sims, 3, 11, 7) / sims)
 n3 <- sum(triangle(sims, 2, 6, 4) / sims)
@@ -237,12 +235,42 @@ mat[10,] <- c(n10, n10*0.4)
 c(sum(mat[,1]), sum(mat[,2]))
 ```
 
-d. By simulation nd an estimate of the accompanying standard deviation for the 
+d. By simulation and an estimate of the accompanying standard deviation for the 
 two expectations. Find how many replications are necessary to be 95% certain 
 that the errors in the estimates of the means are not exceeding 0.2.
 
 we use the equation;
 
 \begin{equation}
-r = 2*sqrt(Var(X) / n)
+0.2 = 2*\sqrt{Var(X) / n}
 \end{equation}
+
+```{r}
+```
+
+
+# Exercise 3
+a. 
+```{r}
+library(mvtnorm)
+
+sims <- 10000
+sigma <- matrix(c(1,0.4041,0.4041,3), ncol=2)
+x <- rmvnorm(n=sims, sigma=sigma)
+p <- sum((x[,1] + x[,2]) >= 3) / sims
+plot(x[1:2000,])
+p
+```
+
+b.
+
+```{r}
+library(mvtnorm)
+
+sims <- 10000
+sigma <- matrix(c(1,0,0,3), ncol=2)
+x <- rmvnorm(n=sims, sigma=sigma)
+p <- sum((x[,1] + x[,2]) >= 3) / sims
+plot(x[1:2000,])
+p
+```
