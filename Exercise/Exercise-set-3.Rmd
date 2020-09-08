@@ -151,9 +151,10 @@ system.time(for (i in 1:Niter)
 a. Simulate the probability that component 1 and component 2 is working.
 
 ```{r}
+library("Rlab")                                  # Load Rlab package
 n <- 10
 s <- 10000
-mat <- matrix(rbinom(n*s, 1, c(0.7,0.95,0.95,0.95,0.99,0.99,0.92,0.92,0.92,0.7)), n, s)
+mat <- matrix(rbern(n*s, c(0.7,0.95,0.95,0.95,0.99,0.99,0.92,0.92,0.92,0.7)), n, s)
 p <- numeric(4)
 p[1] <- (sum(mat[1,]) / s) * (sum(mat[2,]) / s)
 ```
@@ -209,43 +210,53 @@ b. By simulation and the risk-weighted and the non risk-weighted expectation
 for the total resource R
 
 ```{r}
-n1 <- sum(triangle(sims, 2, 6, 4) / sims)
-n2 <- sum(triangle(sims, 3, 11, 7) / sims)
-n3 <- sum(triangle(sims, 2, 6, 4) / sims)
-n4 <- sum(triangle(sims, 1, 9, 5) / sims)
-n5 <- sum(triangle(sims, 8, 10, 9) / sims)
-n6 <- sum(triangle(sims, 5, 9, 7) / sims)
-n7 <- sum(triangle(sims, 2, 6, 4) / sims)
-n8 <- sum(triangle(sims, 3, 5, 4) / sims)
-n9 <- sum(triangle(sims, 8, 12, 10) / sims)
-n10 <- sum(triangle(sims, 3, 7, 5) / sims)
+tenTriangles <- function(Nsim) {
+   n1 <- sum(triangle(Nsim, 2, 6, 4) / sims)
+   n2 <- sum(triangle(Nsim, 3, 11, 7) / sims)
+   n3 <- sum(triangle(Nsim, 2, 6, 4) / sims)
+   n4 <- sum(triangle(Nsim, 1, 9, 5) / sims)
+   n5 <- sum(triangle(Nsim, 8, 10, 9) / sims)
+   n6 <- sum(triangle(Nsim, 5, 9, 7) / sims)
+   n7 <- sum(triangle(Nsim, 2, 6, 4) / sims)
+   n8 <- sum(triangle(Nsim, 3, 5, 4) / sims)
+   n9 <- sum(triangle(Nsim, 8, 12, 10) / sims)
+   n10 <- sum(triangle(Nsim, 3, 7, 5) / sims)
+   
+   mat <- matrix(0, 10, 2)
+   mat[1,] <- c(n1, n1*0.8)
+   mat[2,] <- c(n2, n2*0.3)
+   mat[3,] <- c(n3, n3*0.6)
+   mat[4,] <- c(n4, n4*0.6)
+   mat[5,] <- c(n5, n5*0.5)
+   mat[6,] <- c(n6, n6*0.9)
+   mat[7,] <- c(n7, n7*0.5)
+   mat[8,] <- c(n8, n8*0.8)
+   mat[9,] <- c(n9, n9*0.4)
+   mat[10,] <- c(n10, n10*0.4)
+   
+   return(c(sum(mat[,1]), sum(mat[,2])))
+}
 
-mat <- matrix(0, 10, 2)
-mat[1,] <- c(n1, n1*0.8)
-mat[2,] <- c(n2, n2*0.3)
-mat[3,] <- c(n3, n3*0.6)
-mat[4,] <- c(n4, n4*0.6)
-mat[5,] <- c(n5, n5*0.5)
-mat[6,] <- c(n6, n6*0.9)
-mat[7,] <- c(n7, n7*0.5)
-mat[8,] <- c(n8, n8*0.8)
-mat[9,] <- c(n9, n9*0.4)
-mat[10,] <- c(n10, n10*0.4)
-
-c(sum(mat[,1]), sum(mat[,2]))
+tenTriangles(10000)
 ```
 
 d. By simulation and an estimate of the accompanying standard deviation for the 
 two expectations. Find how many replications are necessary to be 95% certain 
 that the errors in the estimates of the means are not exceeding 0.2.
 
-we use the equation;
-
-\begin{equation}
-0.2 = 2*\sqrt{Var(X) / n}
-\end{equation}
-
 ```{r}
+sample <- 100
+nsim <- 10000
+matrix <- matrix(nrow = 0, ncol = 2)
+for (i in 1:sample) {
+   matrix <- rbind(matrix, tenTriangles(nsim))
+}
+sdr1 <- sd(matrix[,1])
+sdr2 <- sd(matrix[,2])
+n1 <- (4*sdr1^2)/(0.2^2)
+n2 <- (4*sdr2^2)/(0.2^2)
+n1
+n2
 ```
 
 
