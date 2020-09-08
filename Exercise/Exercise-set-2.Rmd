@@ -86,7 +86,7 @@ dpois(2, lambda = 2, log = FALSE)
 ## $P(X < 3)$
 
 ```{r}
-ppois(3, lambda = 2, lower.tail = TRUE, log = FALSE)
+ppois(2, lambda = 2, lower.tail = FALSE, log = FALSE)
 ```
 b. Calculate the probability that there will be exactly 2 accidents during half 
 a year.
