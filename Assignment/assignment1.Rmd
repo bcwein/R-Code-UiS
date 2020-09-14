@@ -13,7 +13,7 @@ output: pdf_document
 
 We have the proposed pdf
 
-\begin{equation}
+\begin{equation}\label{pdfprob1}
 f(x) = \frac{1}{2} - \frac{x}{4}, \quad -1 \leq x \leq 1
 \end{equation}
 
@@ -85,7 +85,7 @@ $F_{X}(x)$ is formally defined as
 So in our case, the cumulative distribution function for f(x) is
 
 \begin{equation}
-F_X(x) = \int_{-\infty}^x f_X(t)\,dt = = 
+F_X(x) = \int_{-\infty}^x f_X(t)\,dt =
 \int_{-1}^{x} \frac{1}{2} - \frac{x}{4} dt =
 \left[\frac{t}{2} - \frac{t^2}{4} \right]_{-1}^{x} =
 \frac{1}{8}(-x^2 + 4x +5)
@@ -106,3 +106,180 @@ And we choose $X = 2 - \sqrt{9 - 8u}$ since we will use this together with
 the inverse transformation method to generate numbers $X$ from the distribution
 above and this particular solution is the only one that will return values in 
 the inverval $[-1, 1]$
+
+c.) Write a function (with single argument n) which produces n random numbers
+with density (\ref{pdfprob1})
+
+```{r}
+# itm (Inverse Transform Method) function for equation one in assignment 1
+itm_equation1 <- function(n) {
+  u <- runif(n)
+  return (2 - sqrt(9 - 8*u))
+}
+```
+
+Check that your function produces correct results by comparing a histogram
+
+```{r}
+Nsim <- 1000000
+itm_p <- itm_equation1(Nsim)
+
+hist(itm_p, breaks = 30, prob = TRUE, xlab = "X", ylab = "P(X)", 
+     main="Histrogram of inverse transform method")
+lines(density(itm_p))
+```
+
+And to see that this is correct, we plot the pdf provided by assignment 1
+to see that this indeed generate numbers from the given distribution.
+
+```{r}
+theoretical_pdf <- function(x) {
+  return((1/2) - (x/4))
+}
+
+x <- seq(-1, 1, 0.01)
+plot(x, theoretical_pdf(x), main = "Plot of pdf", xlab = "x", ylab = "f(x)", 
+     type ="l")
+```
+
+d.) Using a $uniform(-1,1)$ proposal distribution $g$, do the calculations required 
+to obtain an accept-reject method for drawing random numbers with 
+density (\ref{pdfprob1})
+
+The uniform distribution in interval $[a, b]$ has pdf
+\begin{equation}
+f_{u(a, b)}(x) = \frac{1}{b-a}, \qquad a \leq x \leq b
+\end{equation}
+
+Which we will use later. The algorithm for acceptance-rejection algorithm is as
+follows:
+
+1. generate y from g
+
+where g is the proposal, in our case $uniform(-1, 1)$.
+
+2. generate $U$ from $uniform(0, 1)$
+
+3. accept y if $u < \frac{f(y)}{c g(y)}$ and let $x = y$
+
+to find the constant c. such that $\frac{f(t)}{g(t)} \leq c$ for all $t$ where
+$f(t) > 0$. In our case, this means finding the maximum value of the equation
+\begin{equation}
+\frac{f(t)}{g(t)} = \frac{f_X(x)}{f_{u(-1,1)}(x)} = 
+\frac{\frac{1}{2} - \frac{x}{4}}{\frac{1}{2}}  \implies 1 - \frac{x}{2},
+\qquad -1 \leq x \leq 1
+\end{equation}
+
+Which has maximum value at $x = -1$ which gives $f(-1) = 1 + \frac{1}{2} = 1.5$
+which means our constant $c = 1.5$.
+
+
+e.) Write a function (with single argument n) which produces n random numbers 
+with density (\ref{pdfprob1}) using the accept-reject method. Check the results 
+in the same way as in point c.Which method would you prefer in this case - 
+accept-reject or inverse transform? The function system.time is useful in this 
+regard.
+
+We apply the algorithm described above in R:
+
+```{r}
+# ar (acceptance rejection) for equation 1
+ar_equation1 <- function(n) {
+  f <- function(x) (1/2 - x/4)
+  C = 1.5
+  
+   naccepts <- 0
+   result.sample <- rep(NA, n)
+   
+   while (naccepts < n) {
+    y <- runif(1, -1, 1)
+    u <- runif(1)
+   
+    if ( u <= f(y) / (C*(1/2))) {
+      naccepts <- naccepts + 1
+      result.sample[naccepts] = y
+    }
+   }
+   
+   result.sample
+}
+
+Nsim <- 1000000
+ar_p <- ar_equation1(Nsim)
+hist(ar_p, probability = TRUE, main="Histogram of acceptance rejection method",
+     xlab = "X", ylab = "P(X)", breaks=30)
+lines(density(ar_p))
+```
+
+This function is alot slower than the inverse transform method, mainly because
+we iterate until n samples have been generated instead of using vectorized code.
+This slows down the code because of R being an interpereted language. 
+
+You can write a vectorized version which takes into account the probability
+of accepting a propasal and scaling up the number of simulations accordingly, 
+but this does not guarantee that N samples is generated since the expected
+number of iterations needed is a geometric distrubution with expected value
+$E[X] = \frac{1}{p(accept)}$
+
+f.) Check the answers you got for expectations, variance and probabilities in
+points a) and b) above by simulation.
+
+Let's begin with expectation. Analytically, the expectation is $E[X] = 
+-\frac{1}{6}$. In R, the simulated smaple is:
+
+```{r}
+# Mean of inverse transform method simulated values
+mean(itm_p)
+#Mean of acceptance rejection simulated values
+mean(ar_p)
+# Analytical mean
+-1/6
+```
+
+We se that both methods generate the correct mean that we have calculated.
+
+Now let's check the variance:
+
+```{r}
+# Variance of inverse transform method simulated values
+var(itm_p)
+# Variance of acceptance rejection simulated values
+var(ar_p)
+# Analytical variance
+11/36
+```
+
+To find the 95\% confidence interval, we first take 100 samples and calculate
+the mean and do this for every 100 random sample in our data (this gives us 
+10000 sample means).
+
+```{r}
+m <- matrix(itm_p, Nsim/100, 100)
+sample_means <- rowMeans(m)
+hist(sample_means, breaks = 30)
+```
+
+And we see that the sample means are normally distributed, which is confirmed by
+the central limit theorem. We can then use the formula for 
+confidence intervals using Z-scores
+
+\begin{equation}
+CI = \bar{X}\pm Z \frac{\sigma}{\sqrt{n}}
+\end{equation}
+
+In R, we get:
+
+```{r}
+CI <- function(data) {
+  xhat <- mean(data)
+  sd <- sd(data)
+  n <- length(data)
+  lower <- xhat - 2*(sd / n)
+  upper <- xhat + 2*(sd / n)
+  return(c(lower, upper))
+}
+
+CI(sample_means)
+```
+
+# Problem 2
