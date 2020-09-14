@@ -1,0 +1,108 @@
+---
+title: "Assignment 1"
+author: "Bjørn Christian Weinbach"
+date: "18.09.2020"
+header-includes:
+   - \usepackage{bbm}
+output: pdf_document
+---
+
+# Problem 1
+
+## a.) Verify that this is a proper probability density function.
+
+We have the proposed pdf
+
+\begin{equation}
+f(x) = \frac{1}{2} - \frac{x}{4}, \quad -1 \leq x \leq 1
+\end{equation}
+
+which is 0 whenever $x \notin [-1, 1]$
+
+To be qualified as a pdf the function need to satisfy the following:
+
+1.
+\begin{equation}
+  \int_{-\infty}^{\infty} f(x) dx = 1
+\end{equation}
+
+2.
+\begin{equation}
+  f(x) \geq 0, \qquad \text{for any x}
+\end{equation}
+
+Condition 2. can easily be validated by inspection. any x in the interval
+-1 to 1 will yield a positive value.
+
+The condition 1, must be validated through integration. We do this analytically
+like so
+
+\begin{equation}
+  \int_{-\infty}^{\infty} f(x) dx = \int_{-1}^{1} \frac{1}{2} - \frac{x}{4} dx
+  = \left[\frac{x}{2} - \frac{x^2}{4}\right]_{-1}^{1} = 1
+\end{equation}
+
+## a.) Find the mean $E(X)$ and the variance $Var(x)$.
+
+Expectation is formally defined as 
+
+\begin{equation}
+E[X] = \int_{\mathbb{R}} x f(x) dx
+\end{equation}
+
+We do this analytically and get
+
+\begin{equation}
+E[X] = \int_{\mathbb{R}} x f(x) dx = \int_{-1}^{1} \frac{x}{2} - \frac{x^2}{4} dx
+= \left[\frac{x^2}{4} - \frac{x^3}{12}\right]_{-1}^{1} = -\frac{1}{6}
+\end{equation}
+
+Variance is defined as
+
+\begin{equation}
+Var(X) = \int_{\mathbb{R}} x^2 f(x) \,dx - \mu^2 
+\end{equation}
+
+Where $\mu = E[X]$
+
+We do this analytically like so
+
+\begin{equation}
+Var(X) = \int_{\mathbb{R}} x^2 f(x) \,dx - \mu^2  = 
+\int_{-1}^{1} \frac{x^2}{2} - \frac{x^3}{4} dx - (-\frac{1}{6})^2 =
+\left[\frac{x^3}{12} - \frac{x^4}{16}\right]_{-1}^{1} - \frac{1}{36} = \frac{11}{36}
+\end{equation}
+
+## b.) Find the cumulative distribution function $F(x)$ associated with $X$, 
+and use this to calculate $P(X < 0)$ and $P(-0.5 < X < 0.5)$. 
+
+$F_{X}(x)$ is formally defined as
+
+\begin{equation}
+  F_X(x) = \int_{-\infty}^x f_X(t) dt 
+\end{equation}
+
+So in our case, the cumulative distribution function for f(x) is
+
+\begin{equation}
+F_X(x) = \int_{-\infty}^x f_X(t)\,dt = = 
+\int_{-1}^{x} \frac{1}{2} - \frac{x}{4} dt =
+\left[\frac{t}{2} - \frac{t^2}{4} \right]_{-1}^{x} =
+\frac{1}{8}(-x^2 + 4x +5)
+\end{equation}
+
+Since $F_X(x) = P(X < x)$, we can calculate the probabilities above.
+This gives us that $P(X < 0) = \frac{5}{8} = 0.652$ and $P(-0.5 < X < 0.5) = 
+P(X < 0.5) - P(X < -0.5) = 0.84375 - 0.34375 = 0.5$ 
+
+To find $F^{-1}_X(u)$ we set $U = \frac{1}{8}(-x^2 + 4x +5)$ and solve for x
+which gives us
+
+\begin{equation}
+  X = 2 \pm \sqrt{9 - 8u}
+\end{equation}
+
+And we choose $X = 2 - \sqrt{9 - 8u}$ since we will use this together with
+the inverse transformation method to generate numbers $X$ from the distribution
+above and this particular solution is the only one that will return values in 
+the inverval $[-1, 1]$
