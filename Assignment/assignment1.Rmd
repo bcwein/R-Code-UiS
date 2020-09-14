@@ -107,7 +107,7 @@ the inverse transformation method to generate numbers $X$ from the distribution
 above and this particular solution is the only one that will return values in 
 the inverval $[-1, 1]$
 
-c.) Write a function (with single argument n) which produces n random numbers
+## c.) Write a function (with single argument n) which produces n random numbers
 with density (\ref{pdfprob1})
 
 ```{r}
@@ -142,7 +142,7 @@ plot(x, theoretical_pdf(x), main = "Plot of pdf", xlab = "x", ylab = "f(x)",
      type ="l")
 ```
 
-d.) Using a $uniform(-1,1)$ proposal distribution $g$, do the calculations required 
+## d.) Using a $uniform(-1,1)$ proposal distribution $g$, do the calculations required 
 to obtain an accept-reject method for drawing random numbers with 
 density (\ref{pdfprob1})
 
@@ -174,7 +174,7 @@ Which has maximum value at $x = -1$ which gives $f(-1) = 1 + \frac{1}{2} = 1.5$
 which means our constant $c = 1.5$.
 
 
-e.) Write a function (with single argument n) which produces n random numbers 
+## e.) Write a function (with single argument n) which produces n random numbers 
 with density (\ref{pdfprob1}) using the accept-reject method. Check the results 
 in the same way as in point c.Which method would you prefer in this case - 
 accept-reject or inverse transform? The function system.time is useful in this 
@@ -221,7 +221,7 @@ but this does not guarantee that N samples is generated since the expected
 number of iterations needed is a geometric distrubution with expected value
 $E[X] = \frac{1}{p(accept)}$
 
-f.) Check the answers you got for expectations, variance and probabilities in
+## f.) Check the answers you got for expectations, variance and probabilities in
 points a) and b) above by simulation.
 
 Let's begin with expectation. Analytically, the expectation is $E[X] = 
@@ -256,7 +256,7 @@ the mean and do this for every 100 random sample in our data (this gives us
 ```{r}
 m <- matrix(itm_p, Nsim/100, 100)
 sample_means <- rowMeans(m)
-hist(sample_means, breaks = 30)
+hist(sample_means, breaks = 30, prob = TRUE)
 ```
 
 And we see that the sample means are normally distributed, which is confirmed by
@@ -283,3 +283,125 @@ CI(sample_means)
 ```
 
 # Problem 2
+
+## a.) Which distribution does $A = \sum_{i=1}^n X_i$ have?
+
+Since A is a convolution of iid normal distributions, A itself is a
+normal distribution with parameters $N(\sum_{i=1}^n \mu_{X_i}, \sum_{i=1}^n \sigma_{X_i}^2)$
+
+## a.) Which distribution does $B = \frac{1}{n}\sum_{i=1}^n X_i$ have?
+
+The same holds true for linear combinations of random variables and we get
+$\mu$ and $\sigma^2$ by using the formula for expectation and variance of
+linear combinations of random variables. Therefore B has the distribution
+$B \sim N(\mu_X, \frac{\sigma_X^2}{n})$
+
+## a.) Which distribution does $C = \frac{\sqrt{n}(B - \mu)}{\sigma}$ have?
+
+By observation, we see that this resembles the formula for taking a normal
+deviate $X$ to get a standard normal distribution $Z$. If we take the distribution
+$B$ and translate it to a standard normal we get:
+
+\begin{equation}
+Z = \frac{X - \mu_X}{\frac{\sigma}{\sqrt{n}}} =
+\frac{\sqrt{n}(X - \mu_X)}{\sigma}
+\end{equation}
+
+And therefore, the distribution of C is $N(0, 1)$
+
+## b.) Check the results you got in a).
+
+We do this by simulating many independent  replications of each of A, B and C. 
+With $n = 100$, $\mu = 1$ and $\sigma = 2$.
+
+R code below.
+
+```{r}
+# n simulations, k random variables and parameters
+simulate_n_normal <- function(n, k, mu, sigma) {
+  samples <- rnorm(n*k, mu, sigma)
+  m <- matrix(samples, n, k)
+  return(m)
+}
+
+Nsims <- 10000
+Nrvs <- 100
+mu <- 1
+sigma <- 2
+
+samples <- simulate_n_normal(Nsims, Nrvs, mu, sigma)
+A <- rowSums(samples)
+B <- A / Nrvs
+C <- (sqrt(Nrvs)*(B - mean(samples)))/(sd(samples))
+
+# Analytic expectation of A
+mu*Nrvs
+# Expectation by simulation
+mean(A)
+# Analytic Standard deviation
+sqrt(Nrvs)*sigma
+# Standard deviation by simulation
+sd(A)
+
+# Analytic expectation of B
+mu
+# Expectation by simulation
+mean(B)
+# Analytic standard deviation
+sqrt(sigma**2 / Nrvs)
+# Standard deviation by simulation
+sd(B)
+
+# Analytic expectation of C
+0
+# Expectation by simulation
+mean(C)
+# Analytic standard deviation
+1
+# Standard deviation by simulation
+sd(C)
+```
+
+## c.) Find number of required simulations to get CI is not larger than $0.1$
+
+We use the following formula:
+
+\begin{equation}
+n = 4Var(X) / r^2
+\end{equation}
+
+Where $r = 0.1$ is the error. This gives us $n = 1600$
+
+## d.) For the n obtained in c.) and $\mu = 1$, simulate many outcomes of X. 
+
+We implement this in R with $N=1600$ and $N=10$
+
+```{r}
+outside_ci <- function(sims) {
+  samples <- rnorm(sims, 1, 2)
+  B <- mean(samples)
+  S <- sd(samples)
+  
+  lower <- B - 1.96*(S/sqrt(sims))
+  upper <- B + 1.96*(S/sqrt(sims))
+  return(upper < 1 | lower > 1)
+}
+
+vector <- c()
+for (i in 1:1000)
+  vector[i] <- outside_ci(1600)
+
+# Probabiloity of mean outside range n = 1600
+sum(vector)/length(vector)
+
+vector <- c()
+for (i in 1:1000)
+  vector[i] <- outside_ci(10)
+
+# Probabiloity of mean outside range n = 10
+sum(vector)/length(vector)
+```
+
+We observe that the probability for getting a confidence interval that is outside
+the population parameter is about 5 percent when $N=1600$ (which it should) but
+about 8\% when $N=10$.
