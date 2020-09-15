@@ -4,7 +4,7 @@ by Bjørn Christian Weinbach - MsC Data Science
 
 This repository contains my code for STA510 - Statistical modeling.
 
-As of 29.08.2020 the repository contains the following folders:
+As of 15.09.2020 the repository contains the following folders:
 
 * Assignment -  R notebooks of assignments.
 * Exercise - R notebooks of exercise sets.
