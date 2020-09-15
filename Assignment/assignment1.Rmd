@@ -1,11 +1,19 @@
 ---
 title: "Assignment 1"
 author: "Bjørn Christian Weinbach"
-date: "18.09.2020"
+date: \today
 header-includes:
    - \usepackage{bbm}
+   - \usepackage[UKenglish]{babel}
+   - \usepackage[T1]{fontenc}
+   - \usepackage[nodayofweek,level]{datetime}
 output: pdf_document
 ---
+
+Clear R environment
+```{r}
+rm(list = ls())
+```
 
 # Problem 1
 
@@ -249,19 +257,9 @@ var(ar_p)
 11/36
 ```
 
-To find the 95\% confidence interval, we first take 100 samples and calculate
-the mean and do this for every 100 random sample in our data (this gives us 
-10000 sample means).
-
-```{r}
-m <- matrix(itm_p, Nsim/100, 100)
-sample_means <- rowMeans(m)
-hist(sample_means, breaks = 30, prob = TRUE)
-```
-
-And we see that the sample means are normally distributed, which is confirmed by
-the central limit theorem. We can then use the formula for 
-confidence intervals using Z-scores
+To find the 95\% confidence interval, we first take the sample mean of the data. 
+We know that sample means are normally distributed, from the central limit 
+theorem. We can then use the formula for confidence intervals using Z-scores
 
 \begin{equation}
 CI = \bar{X}\pm Z \frac{\sigma}{\sqrt{n}}
@@ -274,12 +272,12 @@ CI <- function(data) {
   xhat <- mean(data)
   sd <- sd(data)
   n <- length(data)
-  lower <- xhat - 2*(sd / n)
-  upper <- xhat + 2*(sd / n)
+  lower <- xhat - 2*(sd / sqrt(n))
+  upper <- xhat + 2*(sd / sqrt(n))
   return(c(lower, upper))
 }
 
-CI(sample_means)
+CI(itm_p)
 ```
 
 # Problem 2
@@ -391,7 +389,7 @@ vector <- c()
 for (i in 1:1000)
   vector[i] <- outside_ci(1600)
 
-# Probabiloity of mean outside range n = 1600
+# Probability of mean outside range n = 1600
 sum(vector)/length(vector)
 
 vector <- c()
@@ -405,3 +403,177 @@ sum(vector)/length(vector)
 We observe that the probability for getting a confidence interval that is outside
 the population parameter is about 5 percent when $N=1600$ (which it should) but
 about 8\% when $N=10$.
+
+# Problem 3
+
+## a.) Import SEIR-model
+
+```{r}
+source("seir_model.R")
+f <- seir_sim()
+```
+
+## a.) Find the number of persons in state $S$ (susceptible) on March 15th 2021.
+
+```{r}
+t <- which(f$dates=="2021-03-15")
+print(f$ode[t,"S"])
+```
+We have that $86.9\%$ is susceptible on the 15th of march 2021.
+
+## a.) The maximum number of persons in critical care (CC) over the period, and also on which date this occurs.
+
+```{r}
+max_index <- which.max(f$ode[,"CC"])
+f$ode[max_index, "CC"]
+f$dates[max_index]
+```
+We see that the maximum no of people in critical care is about $7.9 \times 10^{-3}\%$
+and this occured on \formatdate{17}{02}{2021}
+
+
+## a.) Find average number of people in critical care in 2021
+
+```{r}
+t <- which(f$dates >= "2021-01-01" & f$dates <= "2021-12-31") 
+mean(f$ode[t,"CC"])
+```
+We see that the average number of people in critical care predicted by the model
+is about $4 \times 10^{-3}\%$
+
+## b.) Run the model but now with no social disancing
+
+```{r}
+f2 <- seir_sim(upper_thresh=10000)
+```
+
+## b.) Find maximum number of people in critical care and on what date
+
+```{r}
+max_index <- which.max(f2$ode[,"CC"])
+f2$ode[max_index, "CC"]
+f2$dates[max_index]
+```
+
+And we now find that the number of people in critical care with no social
+social distancing is $0.11\%$ which more intuitively is $1392$ times more than
+the maximum number in critical care in the same period with social distancing.
+
+This would happen on \formatdate{01}{06}{2020} which is much earlier than 
+with social distancing.
+
+## b.) Using the definition that an epidemic ends when fewer than 1 per 1 million people are in the E-state, how long does it take to reach the end of the epidemic?
+
+```{r}
+t <- which(f2$ode[,"E"] < 1*10^-6 & f2$dates >= "2020-04-01") 
+f2$date[t[1]]
+```
+
+Our model predicts that with no social distancing, the epidemic would end at
+\formatdate{12}{04}{2021}.
+
+## b.) Which proportion of the population has been infected (i.e. in RR, RH or RC) when the epidemic ends in this model (herd immunity)?
+
+```{r}
+sum(f2$ode[t[1], c("RR", "RH", "RC")])
+```
+
+At this point, our model predicts that about $60.6\%$ of the population is
+recovered or dead at the time of the predicted end of the epidemic.
+
+## c.) Simulate many (at least 100) SEIR models with different random values of 
+R0max and season ampliude drawn from uniform distributions.
+
+```{r}
+nsim <- 200 # number of simulation replica
+days <- 366 # 366 days in 2020.
+
+t <- which(f2$dates<="2020-12-31" & f2$dates>="2020-01-01")
+m <- matrix(,nsim, days)
+r0s <- vector(mode="numeric",length=nsim)
+sas <- vector(mode="numeric",length=nsim)
+
+for(i in 1:nsim){
+  R0max <- runif(1, min=1.8, max=3.0)
+  r0s[i] <- R0max
+  season_amplitude <- runif(1, min=0, max=0.4)
+  sas[i] <- season_amplitude
+  ff <- seir_sim(R0max = R0max,
+                 season_amplitude = season_amplitude)
+  m[i,] <- 10000*ff$ode[t,"CC"]
+}
+```
+
+## c.) The mean and standard deviation, the 90%, 95% and 99% quantiles of the maximum number of required critical care beds during 2020.
+
+```{r}
+mean(m)
+sd(m)
+quantile(m, c(.90, .95, .99))
+``` 
+Our simulated values are seen above, these are different each time the code
+block above is run due to random sampling for the parameters.
+
+## c.) Calculate the probability that more than 100 critical care beds per million i.e 1 per 10000 people are required.
+
+```{r}
+p <- sum(m >= 1) / length(m)
+p
+```
+
+Our simulated probability is seen above, this differs for each run due to random 
+sampling.
+
+## c.) Make a graphical representation of the maximum number of required critical care beds during 2020.
+
+```{r}
+rowmax <- apply(m, 1, function(x) max(x))
+hist(rowmax, probability = TRUE, breaks = 30, 
+     main="Maximum number of required critical care beds during 2020 pr 10000")
+```
+
+This is not well approximated by a normal distribution.
+
+## d.) Scatterplot of R0max
+
+```{r}
+plot(x = r0s, 
+     y = rowmax,
+     xlab = "R0",
+     ylab = "Critical Care beds pr 10000",
+     main = "R0 vs Critical Care"
+)
+```
+
+## d.) Scatterplot of season ampliude
+```{r}
+plot(x = sas, 
+     y = rowmax,
+     xlab = "R0",
+     ylab = "Seasonal amplitude",
+     main = "R0 vs Seasonal amplitude"
+)
+```
+
+## d.) Discussing linear relationship between critical care beds and the two parameters.
+
+By visual inspection of the plots. We see that there is a linear relationship
+between $R_0$ and critical care beds needed. This is not the case for
+seasonal amplitude to the same extent and it seems that seasonal amplitude
+has a slight negative correlation with required critical care beds.
+
+We clearly see a correlation between $R_0$ and critical care beds
+this suggests that $R_0$ influences the number of critical care beds. If one 
+is to allow oneself to conclude a causal relationship in one direction. Which 
+in this case is quite reasonable.
+
+## d.) Calculate the correlation between critical care beds and the two parameters
+
+```{r}
+# Correlation - R0 vs CC
+cor(rowmax, r0s)
+# Correlation - Seasonal Amplitude vs CC
+cor(rowmax, sas)
+```
+
+And this calculation confirms what we have observed by visual inspection of the plots.
