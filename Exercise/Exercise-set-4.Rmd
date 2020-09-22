@@ -1,0 +1,189 @@
+---
+title: "Exercise set 4"
+output: pdf_document
+author: Bjørn Christian Weinbach
+date: \today
+---
+
+# Exercise 3.1
+I use inverse transform sampling to sample numbers from an two-parameter
+exponential distribution. We have from example 2.6 in Rizzo that the cdf is:
+
+\begin{equation}
+F_X(x) = 1 - e^{-\lambda(x - \eta)} , \qquad x \geq \eta
+\end{equation}
+
+Which gives us
+
+\begin{equation}
+F^{-1}_X(U) = \frac{\eta\lambda - ln(1 - U)}{\lambda}, 
+\qquad U \in \text{Uniform}(0, 1)
+\end{equation}
+
+That has the same distribution as X.
+
+Below is the R Code for sampling numbers from the distribution:
+
+### Inverse cumulative function.
+
+```{r}
+# itm (Inverse Transform Method) function for equation one in assignment 1
+itm_twoexp <- function(n, lambda, eta) {
+  u <- runif(n)
+  return (((lambda*eta) - (log(1 - u)) ) / lambda)
+}
+```
+
+### Sample $Nsim$ numbers and plot in histogram.
+```{r}
+Nsim <- 10000000
+lambda <- 4
+eta <- 2
+itm_p <- itm_twoexp(Nsim, lambda, eta)
+
+hist(itm_p, prob = TRUE, xlab = "X", ylab = "P(X)",
+     main="Histrogram of inverse transform method")
+lines(density(itm_p))
+```
+
+
+# Exercise 3.11
+We have:
+\begin{itemize}
+  \item $N = 1000$
+  \item $p_1$
+  \item $p_2 = 1 - p_1$ 
+  \item $N_1(0, 1)$
+  \item $N_2(3, 1)$
+\end{itemize}
+
+Where $p_1$ and $p_2$ are probabilities of mixing the two distributions.
+This has been implemented in R like so:
+```{r}
+mixture <- function(n, u1, s1, u2, s2, p) {
+  n <- n
+  x1 <- rnorm(n, u1, s1)
+  x2 <- rnorm(n, u2, s2)
+  u <- runif(n)
+  k <- as.integer(u > p)
+  x <- k * x1 + (1-k) * x2
+  hist(x, prob = TRUE, xlab = "X", ylab = "P(X)",
+       main=paste("N(0,1), N(3,1), p=", round(p, 2)))
+  lines(density(x))
+}
+
+par(mfrow=c(2,3))
+mixture(n = 1000, u1 = 0, s1 = 1, u2 = 3, s2 = 1, p = 0/5)
+mixture(n = 1000, u1 = 0, s1 = 1, u2 = 3, s2 = 1, p = 1/5)
+mixture(n = 1000, u1 = 0, s1 = 1, u2 = 3, s2 = 1, p = 2/5)
+mixture(n = 1000, u1 = 0, s1 = 1, u2 = 3, s2 = 1, p = 3/5)
+mixture(n = 1000, u1 = 0, s1 = 1, u2 = 3, s2 = 1, p = 4/5)
+mixture(n = 1000, u1 = 0, s1 = 1, u2 = 3, s2 = 1, p = 5/5)
+par(mfrow=c(1,1))
+```
+
+We have that $p_1 \in [0, 1]$ as it is a probability. When we plot the 
+histograms for different values of $p_1$ ranging from $0$ to $1$ we observe 
+that when $p_1 = 0$ we get only values from  
+$N(0, 1)$ and vice versa. In either case, the distribution is no longer bimodal. 
+
+With this observation i present the following conjecture:
+
+\newtheorem{conjecture}{Conjecture}
+
+\begin{conjecture}
+Given a normal mixture $X$, denoted $F_X(x) = (1 - p)F_{X_1}(x) + pF_{X_2}(x)$.
+Approaches a normal distribition in two cases
+
+\begin{enumerate}
+  \item \begin{equation}
+          \lim_{p \to 0} F_X(x) \rightarrow X_1 \sim N(\mu_1, \sigma_1)
+        \end{equation}
+  \item \begin{equation}
+        \lim_{p \to 1} F_X(x) \rightarrow X_2 \sim N(\mu_2, \sigma_2)
+      \end{equation}
+\end{enumerate}
+\end{conjecture}
+
+# Exercise 3.14
+In this exercise we are tasked with generating 200 random observations from
+a 3-dimensional multivariate normal distribution with mean vector
+$\mu = (0, 1, 2)$ and covariance matrix
+\begin{equation*}
+\Sigma = \begin{bmatrix}
+          1.0 & -0.5 & 0.5\\
+          -0.5 & 1.0 & -0.5 \\
+          0.5 & -0.5 & 1.0
+          \end{bmatrix}
+\end{equation*}
+
+## Choleski factorization  
+
+```{r}
+rmvn.Cholenski <-  function(n, mu, sigma) {
+  # Generate n random vectors from MVN(mu, Sigma)
+  # dimensions are inferred from mu and Sigma
+  d <- length(mu)
+  Q <- chol(sigma) # Cholenski factorization of sigma
+  Z <- matrix(rnorm(n*d), nrow = n, ncol = d)
+  X <- Z %*% Q + matrix(mu, n, d, byrow = TRUE)
+}
+
+n <- 200
+mu <- c(0, 1, 2)
+sigma <- matrix(
+            c(1.0, -0.5, 0.5, -0.5, 1.0, -0.5, 0.5, -0.5, 1.0), 
+            nrow = 3, 
+            ncol = 3
+        )
+
+X <- rmvn.Cholenski(200, mu, sigma)
+pairs(X)
+```
+
+
+# Exercise 1
+
+## Simulate arrival times with the fact that no of arrivals is $\lambda t$
+
+```{r}
+# implementation based on the relation to the uniform distribution
+plotHPPu <- function(lambda, t){
+  Nevents <- rpois(1, lambda * t)
+  timesto <- sort(runif(Nevents, min=0, max=t))
+  
+  plot(timesto, 1:Nevents, type="s", xlab = "arrival time", 
+       ylab = "Event number", lwd=1.5, ylim=c(0, Nevents))
+  
+  points(timesto, rep(0,Nevents), pch=21, bg="red")
+}
+
+plotHPPu(lambda = 2, t = 10)
+```
+
+## Calculate $P(N(10) > 25)$
+
+The probability of $P(N(10) > 25)$ and the poisson process has the property
+that the number of events is poisson distributed. Which means that the probability
+is the same as the probability of a poisson distributed random variable $X$
+with parameter $\lambda t = 2 \times 10 = 20$ is larger than $25$ i.e
+$$P(X > 25) = 1 - P(X \leq 25) = 1 - e^{-\lambda t}\sum_{i=0}^{25} \frac{(\lambda t)^i}{i!}$$
+
+## Calculate above equation by simulation
+
+```{r}
+rHPPu <- function(Nsim, lambda, t){
+  Nevents <- rpois(Nsim, lambda * t)
+  return(mean(Nevents > 25))
+}
+
+lambda <- 2
+t <- 10
+rHPPu(1000000, lambda, t)
+```
+
+## Analytical calculation
+
+```{r}
+ppois(q = 25, lambda = lambda*t, lower.tail = FALSE, log.p = FALSE)
+```
