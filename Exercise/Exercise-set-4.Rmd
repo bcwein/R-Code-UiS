@@ -5,6 +5,10 @@ author: Bjørn Christian Weinbach
 date: \today
 ---
 
+```{r}
+rm(list = ls())
+```
+
 # Exercise 3.1
 I use inverse transform sampling to sample numbers from an two-parameter
 exponential distribution. We have from example 2.6 in Rizzo that the cdf is:
@@ -37,13 +41,14 @@ itm_twoexp <- function(n, lambda, eta) {
 ### Sample $Nsim$ numbers and plot in histogram.
 ```{r}
 Nsim <- 10000000
-lambda <- 4
-eta <- 2
+lambda <- 3
+eta <- 0
 itm_p <- itm_twoexp(Nsim, lambda, eta)
 
 hist(itm_p, prob = TRUE, xlab = "X", ylab = "P(X)",
      main="Histrogram of inverse transform method")
-lines(density(itm_p))
+lines(density(itm_p), col="red")
+itm_p
 ```
 
 
@@ -69,7 +74,7 @@ mixture <- function(n, u1, s1, u2, s2, p) {
   x <- k * x1 + (1-k) * x2
   hist(x, prob = TRUE, xlab = "X", ylab = "P(X)",
        main=paste("N(0,1), N(3,1), p=", round(p, 2)))
-  lines(density(x))
+  lines(density(x), col = "red")
 }
 
 par(mfrow=c(2,3))
