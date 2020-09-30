@@ -122,3 +122,42 @@ print(paste("Monte Carlo Integration:", mcint(10000, 0, 0.5, intfunc)))
 print(paste("Exponential distribution:", thetastar))
 ```
 
+# Problem 1
+
+## a) Simulate $N_1(t) and $N_2(t)
+```{r}
+# Function for simulating arrival times for a NHPP between a and b using thinning
+simtNHPP <- function(a,b,lambdamax, lambdafunc){
+  # Simple check that a not too small lambdamax is set
+  if(max(lambdafunc(seq(a,b,length.out = 100)))>lambdamax)
+    stop("lambdamax is smaller than max of the lambdafunction")
+  # First simulate HPP with intensity lambdamax on a to b
+  expectednumber <- (b-a)*lambdamax  
+  Nsim <- 3*expectednumber  # Simulate more than the expected number
+  timesbetween <- rexp(Nsim,lambdamax) # Simulate interarrival times
+  timesto <- a+cumsum(timesbetween)   # Calculate arrival times starting at a
+  timesto <- timesto[timesto<b] # Dischard the times larger than b
+  Nevents <- length(timesto) # Count the number of events
+  # Next do the thinning. Only keep the times where u<lambda(s)/lambdamax
+  U <- runif(Nevents)
+  timesto <- timesto[U<lambdafunc(timesto)/lambdamax]  
+  timesto  # Return the remaining times
+}
+
+lambda1 <- function(t) {
+  ifelse(ceiling(t) %% 2, 1, 2)
+}
+
+lambda2 <- function(t) {
+  ifelse(ceiling(t) %% 2, 1, 1.5)
+}
+```
+
+## b) By simulation. Find $E[N_1(10.5)]$ and $E[N_2(10.5)]$
+
+```{r}
+ex1 <- mean(simtNHPP(0, 10.5, 2, lambda1))
+ex1
+ex2 <- mean(simtNHPP(0, 10.5, 1.5, lambda2))
+ex2
+```
