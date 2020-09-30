@@ -77,12 +77,48 @@ print(paste("Monte Carlo Integration:", mcint(10000, 0, pi/3, intfunc)))
 print(paste("Exact integral:", -cos(pi/3) + cos(0)))
 ```
 
+# Exercise 6.2
+
+Refer to example 6.3. Compute a Monte Carlo estimate of the standard normal cdf,
+by generating from the uniform(0, x) distribution. Compare estimate with normal
+cdf function pnorm.
+
+```{r}
+intfunc <- function(t) {
+  return(exp(-t^2/2) * sqrt(2/pi))
+}
+
+theta <- mcint(10000, 0, 2, intfunc)
+
+print(paste("Monte Carlo Integration:", theta))
+print(paste("Exact integral:", pnorm(2, 0, 1, lower.tail = TRUE, log.p = FALSE)))
+```
+
+## Calculate confidence interval
+
+```{r}
+theta
+sdtheta <- sd(exp(-runif(10000, 0, 2)^2 / 2) * sqrt(2 / pi))
+theta - qnorm(0.975, 0, 1)*sdtheta
+theta + qnorm(0.975, 0, 1)*sdtheta
+```
+
 # Exercise 6.3
 
-Compute a monte carlo estimate $\hat{\theta}$ of
+Compute a Monte Carlo estimate $\hat{\theta}$ of
 
 $$
 \int_{0}^{0.5} e^{-x} dx
 $$
 
 by sampling from a Uniform(0, 0.5) and estimate the variance of of $\hat{\theta}$
+
+```{r}
+Nsim <- 10000
+thetahat <- (0.5 - 0)*mean(exp(-runif(Nsim, 0, 0.5)))
+thetastar <- pexp(0.5, 1) - pexp(0, 1)
+
+print(paste("Monte Carlo Integration:", mcint(10000, 0, 0.5, intfunc)))
+print(paste("Exponential distribution:", thetastar))
+```
+
