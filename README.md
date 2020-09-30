@@ -6,7 +6,7 @@ This repository contains my code for STA510 - Statistical modeling.
 
 As of 15.09.2020 the repository contains the following folders:
 
-* Assignment -  R notebooks of assignments.
+* Assignment -  R notebooks and pdf's of assignments.
 * Exercise - R notebooks of exercise sets.
 * Lectures - Example code from lectures.
 
