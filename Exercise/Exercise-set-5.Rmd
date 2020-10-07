@@ -156,8 +156,78 @@ lambda2 <- function(t) {
 ## b) By simulation. Find $E[N_1(10.5)]$ and $E[N_2(10.5)]$
 
 ```{r}
-ex1 <- mean(simtNHPP(0, 10.5, 2, lambda1))
-ex1
-ex2 <- mean(simtNHPP(0, 10.5, 1.5, lambda2))
-ex2
+Nsim = 10000
+ex1 <- numeric(length(Nsim))
+ex2 <- numeric(length(Nsim))
+
+for (i in 1:Nsim) {
+  ex1[i] <- length(simtNHPP(0, 10.5, 2, lambda1))
+  ex2[i] <- length(simtNHPP(0, 10.5, 1.5, lambda2))
+}
+mean(ex1)
+mean(ex2)
+p = mean(ex1 > ex2)
+p
 ```
+
+# Problem 2
+
+## a) 
+
+```{r}
+simAR1 <- function(Nsim, mu, phi, sigma, t) {
+  T <- t    # length of realization
+  N <- Nsim # number of realizations
+  
+  a <- rnorm(n=N, mean=mu, sd=sigma^2) # some random initial configuration
+  
+  sims <- matrix(0.0,nrow = N, ncol=T)
+  sims[,1] <- a 
+  
+  for( n in 2:T){
+    sims[,n] <- mu + phi*(1 - sims[,n-1]) + rnorm(N,mean=0.0,sd=((1-phi^2)*sigma^2))
+  }
+  sm1 <- (1/T)*rowSums(sims)
+  sm2 <- (1/T)*rowSums(sims)
+  mean1 <- mean(sm1)
+  var1 <- var(sm1)
+  mean2 <- mean(sm2)
+  var2 <- var(sm2)
+  return(c(mean1, var1, mean2, var2))
+}
+```
+
+## b)
+
+```{r}
+simAR1(10000, 0.0, -0.9, 1, 1000)
+simAR1(10000, 0.0, 0.0, 1, 1000)
+simAR1(10000, 0.0, 0.9, 1, 1000)
+```
+
+## c)
+
+```{r}
+T <- 1000    # length of realization
+N <- 10000 # number of realizations
+mu <- 0
+phi <- -0.9
+sigma <- 1
+
+a <- rnorm(n=N, mean=0, sd=1) # some random initial configuration
+
+sims <- matrix(0.0,nrow = N, ncol=T)
+sims[,1] <- a 
+
+for( n in 2:T){
+  sims[,n] <- mu + phi*(1 - sims[,n-1]) + rnorm(N,mean=0.0,sd=((1-phi^2)*sigma^2))
+}
+
+for (i in 1:N) {
+  as.numeric(coda::effectiveSize(sims[i, ]))
+}
+```
+
+
+# Problem 3
+
