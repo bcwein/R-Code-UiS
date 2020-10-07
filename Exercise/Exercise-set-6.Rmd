@@ -1,0 +1,113 @@
+---
+title: "Exercise set 6"
+output: pdf_document
+author: Bjørn Christian Weinbach
+date: \today
+---
+
+Clear R environment
+
+```{r}
+rm(list = ls())
+```
+
+# Exercise 6.6 in Rizzo
+
+In Exaple 6.7 the control variate approach was illustrated for monte carlo
+integration of 
+$$
+\theta = \int_0^1 e^x dx.
+$$
+
+Now consider the antithetic variate approach. Compute $Cov(e^U, e^{1-U})$ and
+$Var(e^U + e^{1-U})$, where $U \sim \text{Uniform}(0,1)$. What is the percent
+reduction in variance of $\hat{\theta}$ that can be achieved using antithetic 
+variates (compared with simple MC)?
+
+
+```{r}
+Nsim <- 10^4
+u <- runif(Nsim, 0, 1) 
+x1 <- exp(1)^u
+x2 <- exp(1)^(1-u)
+cov <- cov(x1, x2)
+var <- var(x1 + x2)
+cov
+# finne reduksjon i varians mellom simple MC og antithetic variate MC?
+```
+
+## Exercise 6.7 in Rizzo
+Refer to exercise 6.6. Use a Monte Carlo simulation to estimate $\theta$ by
+the antithetic variate approach and by the simple monte carlo method. Compute
+an empirical estimate of the percent reduction in variance using the antithetic 
+variate. Compare the result with the theoritical value from Exercise 6.6.
+
+```{r}
+nrep <- 1000
+intcMCvec <- numeric(nrep)
+intaMCvec <- numeric(nrep)
+for(i in 1:nrep){
+  x <- runif(Nsim)
+  intcMCvec[i] <- mean(exp(x)) # crude MC result
+  x1 <- runif(Nsim/2)
+  x2 <- 1-x1
+  x <- c(x1,x2)
+  intaMCvec[i] <- mean(exp(x)) # antitetic MC result
+}
+
+mean(intcMCvec)
+mean(intaMCvec)
+1 - (var(intaMCvec) / var(intcMCvec))
+```
+
+### Exercise 6.10 in Rizzo
+Use MC integration with antithetic variables to estimate
+$$
+\int_0^1 \frac{e^{-x}}{1 + x^2}dx,
+$$
+and find the approximate reduction in variance as a percentage of the variance
+without variance reduction. 
+```{r}
+intcMCvec <- numeric(nrep)
+intaMCvec <- numeric(nrep)
+for(i in 1:nrep){
+  x <- runif(Nsim)
+  intcMCvec[i] <- mean(exp(-x)/(1 + x^2)) # crude MC result
+  x1 <- runif(Nsim/2)
+  x2 <- 1-x1
+  x <- c(x1,x2)
+  intaMCvec[i] <- mean(exp(-x)/(1 + x^2)) # antitetic MC result
+}
+
+mean(intcMCvec)
+mean(intaMCvec)
+1 - (var(intaMCvec) / var(intcMCvec))
+```
+
+# Exercise 6.12 in Rizzo
+Let $\hat{\theta_f^{IS}}$ be an importans ampling estimator of 
+$\theta = \int g(x)dx$, where the importance function f is a density. Prove that 
+if $g(x)/f(x)$ is bounded, then the variance of the importance sampling estimator
+$\hat{\theta_f^{IS}}$ is finite.
+
+From Rizzo we have
+
+$$
+Var(\theta) = E[\hat{\theta}^2] - E[\hat{\theta}]^2 = \int_A \frac{g^2(x)}{f(x)}
+- \theta^2
+$$
+# Problem 1
+
+Calculate the integral
+$$
+\int_1^\infty \frac{e^{-x}}{1 + x^2} dx
+$$
+```{r}
+Nsim <- 10000
+g <- function(x){return(exp(-x) / (1 + x^2) * (x > 1))}
+f <- function(x){return(dexp(x))}
+x <- rexp(Nsim, 1)
+wts <- g(x) / f(x)
+intiMC <- mean(wts)
+intiMC
+```
