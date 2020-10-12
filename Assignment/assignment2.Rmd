@@ -1,0 +1,327 @@
+---
+title: "Assignment 2"
+author: "Bjørn Christian Weinbach"
+date: \today
+header-includes:
+   - \usepackage{bbm}
+   - \usepackage[UKenglish]{babel}
+   - \usepackage[T1]{fontenc}
+   - \usepackage[nodayofweek,level]{datetime}
+urlcolor: blue
+output: pdf_document
+---
+
+Clear R environment
+```{r}
+rm(list = ls())
+```
+
+# Problem 1
+
+Consider the integral
+
+$$
+\int_{-1}^{1} \int_{-1}^{1} 1_D(x,y) dxdy
+$$
+
+Where $1_D(x, y)$ is the indicator function defined so that 
+$$
+1_D(x,y) = \begin{cases}
+1 \quad \text{if} \quad x^2 + y^2 \leq 1, \newline
+0 \quad \text{otherwise.}
+\end{cases}
+$$
+As a crude first attempt, consider the estimator
+$$
+\theta_{CMC} = \frac{4}{N}\sum_{i=1}^{n} 1_D(X_i, Y_i)
+$$
+A.) Argue for why $\theta_{CMC}$ is a monte carlo estimator for the integral above.
+
+According to [this](https://en.wikipedia.org/wiki/Monte_Carlo_integration#overview) 
+wikipedia article which  was accessed the \formatdate{09}{10}{2020}, 
+the monte carlo estimate for a multidimensional definite integral
+
+
+$$
+I = \int_\Omega f(\boldsymbol{\bar{x}}) d\boldsymbol{\bar{x}}
+$$
+
+where $\Omega$ is a subset of $R^m$, has volume
+
+
+$$
+V = \int_\Omega d\boldsymbol{\bar{x}}
+$$
+
+The naive Monte Carlo approach is to sample points uniformly on $\Omega$
+given N uniform samples,
+
+$$
+\boldsymbol{\bar{x}_1}, \dots, \boldsymbol{\bar{x}_n} \in \Omega,
+$$
+I can be approximated by
+$$
+I \approx \Omega_N \equiv  V \frac{1}{N}\sum_{i=1}^{N} f(\boldsymbol{\bar{x}_i})
+$$
+
+Which is true due to the law of large numbers.
+
+In our case, which is also very similar to the 
+[example](https://en.wikipedia.org/wiki/Monte_Carlo_integration#Example) on the 
+wikipedia article for monte carlo integration, $\Omega = [-1, 1] \times [-1, 1]$
+with $V = \int_{-1}^1 \int_{-1}^1 dxdy = 4$ which gives the following crude way 
+to estimate $I$
+$$
+I = \frac{4}{N}\sum_{i=1}^{N}1_D(X_i, Y_i) 
+$$
+
+Which is the proposed estimator $\theta_{CMC}$.
+
+A.) Show that $1_D(X_i, Y_i)$ has a bernoulli distribution with $p=\frac{\pi}{4}$
+
+The function returns success or failure, and is therefore has aa potential '
+bernoulli distribtion. To calculate $P(X^2 + Y^2 \leq 1)$ we need to calculate
+the 
+
+c) Implementation of monte carlo estimate of $\theta_{CMC}$ with $N = 1000$
+ 
+```{r}
+indicator1 <- function (x, y) {          # Indicator function for unit circle
+  return((x^2+y^2 <= 1))
+}
+
+mcEstimatePi <- function (Sims) {     # function for monte carlo estimate 
+  mcPi <- numeric(Sims)
+  for (i in 1:Sims) {
+    N <- 1000                            # Number of samples
+    x <- runif(N, -1, 1)                 # x values from uniform
+    y <- runif(N, -1, 1)                 # y values from uniform
+    mcPi[i] <- (4/N)*sum(indicator1(x, y)) # return monte carlo estimate
+  }
+  return(mcPi)
+}
+
+Sims <- 10000                            # Simulations of pi
+mcPi <- mcEstimatePi(Sims)        # Function call
+summary(mcPi)                            # Summary stats for MC estimate
+hist(mcPi)                               # Histogram
+```
+```{r}
+mean(mcPi)
+var(mcPi)
+```
+
+We see that the distribution is approxamately normally distrobuted with sample
+mean at approx $Mean = 3.141$ and sample variance at approx $Variance =  0.00260$.
+This is du to the central limit theorem because our estimate of pi is based on a
+sum of several samples.
+
+d.) Calculate probability of correctly estimating to two decimal places
+
+```{r}
+mean(mcPi < 3.15) - mean(mcPi <= 3.14)
+```
+e.) Introducing antithetic variables
+
+The assignment proposes two antithetic variables $V = a + b - X = -X$ and 
+$W = -Y$
+
+These will not reduce the monte carlo variance since $X$ and $Y$ are independent
+uniform random variables and due to their independence there is no negative
+correlation gained by just flipping the sign of both variables from $X$ and $Y$ to  
+$-X$ and $-Y$.
+```{r}
+x <- runif(1000, -1, 1)
+y <- runif(1000, -1, 1)
+cov(-x, -y)
+```
+
+f.) Let's see if our variance is reduced by doing exercise c. with the new variables.
+
+```{r}
+mcEstimatePi <- function (Sims) {     # function for monte carlo estimate 
+  mcPi <- numeric(Sims)
+  for (i in 1:Sims) {
+    N <- 1000                            # Number of samples
+    x <- runif(N, -1, 1)                 # x values from uniform
+    y <- runif(N, -1, 1)                 # y values from uniform
+    mcPi[i] <- (4/N)*sum(indicator1(-x, -y)) # mcEstimate with new variables
+  }
+  return(mcPi)
+}
+
+Sims <- 10000                            # Simulations of pi
+mcPi <- mcEstimatePi(Sims)               # Function call
+summary(mcPi)                            # Summary stats for MC estimate
+mean(mcPi)
+var(mcPi)
+```
+g.) Check if shift function reduces variance
+
+```{r}
+shift <- function(u) {                   # Introducing shift function
+  return(((u+2.0) %% 2.0) - 1.0)
+}
+
+mcEstimatePi <- function (Sims) {     # function for monte carlo estimate 
+  mcPi <- numeric(Sims)
+  for (i in 1:Sims) {
+    N <- 1000                            # Number of samples
+    x <- runif(N, -1, 1)                 # x values from uniform
+    y <- runif(N, -1, 1)                 # y values from uniform
+    sx <- shift(x)
+    sy <- shift(y)
+    mcPi[i] <- (4/N)*sum(indicator1(sx, sy)) # mcEstimate with new variables
+  }
+  return(mcPi)
+}
+
+Sims <- 10000                            # Simulations of pi
+mcPi <- mcEstimatePi(Sims)               # Function call
+summary(mcPi)                            # Summary stats for MC estimate
+mean(mcPi)
+var(mcPi)
+```
+h.) Use important sampling
+
+```{r}
+f <- function (x, y, sigma) {
+  return((1/(2*pi*sigma^2))*exp(-(x^2)/(2*sigma^2))*exp(-(y^2)/(2*sigma^2)))
+}
+
+mcEstimatePi <- function (Sims, sigma) {  # function for monte carlo estimate 
+  mcPi <- numeric(Sims)
+  for (i in 1:Sims) {
+    N <- 1000                                 # Number of samples
+    x <- rnorm(N, 0, sigma^2)                 # x values from uniform
+    y <- rnorm(N, 0, sigma^2)                 # y values from uniform
+    mcPi[i] <- mean(indicator1(x, y) / f(x, y, sigma))
+  }
+  return(mcPi)
+}
+```
+
+```{r}
+mcPi <- mcEstimatePi(10000, 0.3)
+summary(mcPi)
+```
+
+# Problem 2
+
+Define $\lambda(t)$ in R 
+```{r}
+# Specify the intensity function for storms
+lambdastorm <- function(t) {
+ (297 / 10)*(1 + cos(2*pi*(t + (1/10)))) * (1 - (exp(-t/10)/2)) + 3/5
+}
+
+lambdastorm(0.5)
+```
+
+a.) Calculating number of storms, expected value and variance
+
+According to Rizzo on page 103. A poisson proccess with a intensity function
+$\lambda(t)$ has the property that the number of events $N(t)$ in interval $[0, t]$ 
+has the poisson distribution with mean 
+$$
+E[N(t)] = \int_0^t \lambda(y) dy
+$$
+Which in our case gives 
+
+```{r}
+integrate(lambdastorm, 0, 1)
+```
+Which we have confirmed by the simulation above which has a simulated mean of 
+approximately $16.3$
+
+Let's find the expected number of storms in 2025 by calculating the integral
+```{r}
+integrate(lambdastorm, 5, 6)
+```
+And let's find the expected value and standard deviation of storms in 
+2020 and 2021 combined
+
+Expected value is calculated using the integral below
+```{r}
+integrate(lambdastorm, 0, 2)
+```
+
+Which means the number of events in 2020 and 2021 combined is poisson
+distrubuted with $\lambda = 39.72776$. The variance of a poisson distribution is
+$Var(X) = \lambda$ (according to Rizzo on page 44).  
+$$
+SD(X) = \sqrt{Var(X)} = \sqrt{33.92776 } =  5.824754
+$$
+b.) Find smallest possible $\lambda_{max}$ for all $\lambda(t), \quad t \geq 0$
+
+The function $\lambda(t)$ does not have a global maximum because it is modeled
+with a increasing winter intensity due to climate change that does not stop
+increasing. Solving for $\frac{d}{dt} \lambda(t) = 0$ gives an infinite number
+of potential maximum or minimum points and there is no $\lambda_{max}$ for all
+$\lambda(t)$ values.
+
+c.) Validate previous points by simulation
+
+simtNHPP borrowed from lectures on stochastic processes
+```{r}
+# Function for simulating arrival times for a NHPP between a and b using thinning
+simtNHPP <- function(a,b,lambdamax,lambdafunc){
+  # Simple check that a not too small lambdamax is set
+  if(max(lambdafunc(seq(a,b,length.out = 100)))>lambdamax)
+    stop("lambdamax is smaller than max of the lambdafunction")
+  # First simulate HPP with intensity lambdamax on a to b
+  expectednumber <- (b-a)*lambdamax  
+  Nsim <- 3*expectednumber  # Simulate more than the expected number to be certain to exceed stoptime
+  timesbetween <- rexp(Nsim,lambdamax) # Simulate interarrival times
+  timesto <- a+cumsum(timesbetween)   # Calculate arrival times starting at a
+  timesto <- timesto[timesto<b] # Dischard the times larger than b
+  Nevents <- length(timesto) # Count the number of events
+  # Next do the thinning. Only keep the times where u<lambda(s)/lambdamax
+  U <- runif(Nevents)
+  timesto <- timesto[U<lambdafunc(timesto)/lambdamax]  
+  timesto  # Return the remaining times
+}
+
+Nsim <- 1000
+a <- 0
+b <- 1
+NHPPnumbers <- vector(length=Nsim)
+for(i in 1:Nsim) {
+  NHPPnumbers[i] <- length(simtNHPP(a=a,b=b,
+                           lambdamax=max(lambdastorm(seq(a, b, 0.01))),
+                           lambdafunc=lambdastorm))
+}
+
+# Exepcted number of storms in 2020
+mean(NHPPnumbers)
+
+Nsim <- 1000
+a <- 5
+b <- 6
+NHPPnumbers <- vector(length=Nsim)
+for(i in 1:Nsim) {
+  NHPPnumbers[i] <- length(simtNHPP(a=a, b=b,
+                           lambdamax=max(lambdastorm(seq(a, b, 0.01))),
+                           lambdafunc=lambdastorm))
+}
+
+# Exepcted number of storms in 2025
+mean(NHPPnumbers)
+
+Nsim <- 1000
+a <- 0
+b <- 2
+NHPPnumbers <- vector(length=Nsim)
+for(i in 1:Nsim) {
+  NHPPnumbers[i] <- length(simtNHPP(a=a, b=b,
+                           lambdamax=max(lambdastorm(seq(a, b, 0.01))),
+                           lambdafunc=lambdastorm))
+}
+
+# Expected number of storms in 2020 and 2021
+mean(NHPPnumbers)
+# Variance of number of storms in 2020 and 2021
+var(NHPPnumbers)
+# Standard deviation of number of storms in 2020 and 2021
+sd(NHPPnumbers)
+```
