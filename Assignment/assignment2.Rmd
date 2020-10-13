@@ -325,3 +325,157 @@ var(NHPPnumbers)
 # Standard deviation of number of storms in 2020 and 2021
 sd(NHPPnumbers)
 ```
+d.) Simulate claim size
+
+To calculate the claim size for a given year, simulate a poisson process
+and calculate mean parameter for all storms, then draw claim size for
+exponential distribution with mean parameter $c(t_i)$ where $t_i$ is time of a 
+given storm simulated from the NHPP.
+```{r}
+# mean function
+claim <- function (t) {
+  return(10*exp(5*t / 100))
+}
+
+# function for simulatin Nsim claims, from a to b
+simulate_claims <- function(Nsim, a, b) {
+  Claims <- vector(length=Nsim)
+  for(i in 1:Nsim) {
+    # Calculate mean parameter of storm based on time of storm
+    expmean <- claim(simtNHPP(a=a, b=b,
+                     lambdamax=max(lambdastorm(seq(a, b, 0.01))),
+                     lambdafunc=lambdastorm))
+    # Draw claim size for all storms from exponential with calculated mean param
+    Claims[i] <- sum(rexp(length(expmean), (1/expmean)))
+  }
+  return(Claims)
+}
+
+claims <- simulate_claims(10000, 0, 1)
+hist(claims, breaks=20)
+# Calculate mean
+mean(claims)
+# Calculate std
+sd(claims)
+```
+To find a confidence interval one simple approach is to calculate the standard
+normal confidence interval. This can be done since the distribution of means 
+approach a normal distribution due to the central limit theorem.
+
+```{r}
+# Standard normal confidence interval
+CI<- c(mean(claims) - qnorm(0.975, 0, 1)*(sd(claims)/sqrt(length(claims))),
+       mean(claims) + qnorm(0.975, 0, 1)*(sd(claims)/sqrt(length(claims))))
+CI
+```
+
+To be 97.5% certain to be able to be sure that the company is able to cover all
+claims, 97.5% of the simulated costs must be possible to pay. I.e, the 97.5 
+precentile of the simulated claims must be calculated
+
+```{r}
+quantile(claims, c(0.975))
+```
+
+And we see that 97.5% of the simulated costs are less than approx 300 million
+kroners during 2020.
+
+e.) Calculate claims using Rao-Blackwelliztion
+
+R code for estimating $E[X] = E[Y]$ using equation 6 and 7 in assigment  2.
+
+```{r}
+# function for simulatin Nsim claims, from a to b
+# Rao-Blackwelliztion approach
+simulate_claims <- function(Nsim, a, b) {
+  Claims <- vector(length=Nsim)
+  for(i in 1:Nsim) {
+    # Calculate mean parameter of storm based on time of storm and sum them
+    Claims[i] <- sum(claim(simtNHPP(a=a, b=b,
+                     lambdamax=max(lambdastorm(seq(a, b, 0.01))),
+                     lambdafunc=lambdastorm)))
+  }
+  return(Claims)
+}
+
+claims <- simulate_claims(10000, 0, 1)
+hist(claims, breaks=20)
+# Calculate mean
+mean(claims)
+# Calculate std
+sd(claims)
+```
+
+We observe that the standard deviation is smaller and by inspection see that the
+histogram is not as wide as the previous estimate. Now, let's calculate the
+confidence interval for the mean of claims.
+
+```{r}
+# Standard normal confidence interval
+CI<- c(mean(claims) - qnorm(0.975, 0, 1)*(sd(claims)/sqrt(length(claims))),
+       mean(claims) + qnorm(0.975, 0, 1)*(sd(claims)/sqrt(length(claims))))
+CI
+```
+
+f.) Propose and implement improved estimator of $Var(X)$
+
+# Problem 3 - Bootstrapping
+
+Load data and run simple regression
+```{r}
+load("prob23.dat")
+lm.obj <- lm(y ~ x1+x2+x3+x4+x5,data=df)
+Rsquared <- summary(lm.obj)$r.squared
+Rsquared
+```
+
+a.) Calculate $B$ bootstrap samples for $R^2$ and plot histogram
+
+Code below is borrowed both from bootstra_examples.R file from the lectures
+as well as [this](https://www.statmethods.net/advstats/bootstrapping.html)
+article by statmethods.net
+
+```{r}
+# Bootstrap 95% CI for R-Squared
+library(boot)
+
+# function to obtain R-Squared from the data
+rsq <- function(formula, data, indices) {
+  d <- data[indices,] # allows boot to select sample
+  fit <- lm(formula, data=d)
+  return(summary(fit)$r.square)
+}
+# bootstrapping with 5000 replications
+results <- boot(data=df, statistic=rsq, R=5000, formula=y~x1+x2+x3+x4+x5)
+
+# view results
+results
+plot(results)
+
+# get 95% confidence interval
+boot.ci(results, type=c("bca"))
+```
+We see from the histogram, the quantile plot and the confidence intervals 
+that the bootstrap samples of $R^2$ is fairly normal.
+
+b.) Find bootstrap estimate for bias of $R^2$
+
+According to the ordinary nonparametric bootstrap using the boot library,
+$bias(R^2) \approx 0.00148$ and  $\text{std.err}(R)^2 \approx 0.0167$
+
+b.) Calculate 99% confidence interval
+
+To calculate the 99% confidence interval for $R^2$ using standard normal interval
+and percentile interval, we use the boot library.
+
+```{r}
+boot.ci(results, conf=0.99, type=c("norm", "perc"))
+```
+We see that the confidence interval is not quite equal, the normal confidence
+interval is a tiny bit wider thatn the percentile interval. This is due to 
+the data not beeing quite normal. We can see this form the quantile plot above
+where we see that $R^2$ values fart from the mean of the data is not as often
+as expected from a standard normal distributition.
+
+# Problem 4
+
