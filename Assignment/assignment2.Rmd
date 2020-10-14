@@ -9,6 +9,7 @@ header-includes:
    - \usepackage[nodayofweek,level]{datetime}
 urlcolor: blue
 output: pdf_document
+bibliography: assignment2.bib
 ---
 
 Clear R environment
@@ -419,7 +420,7 @@ CI
 
 f.) Propose and implement improved estimator of $Var(X)$
 
-# Problem 3 - Bootstrapping
+# Problem 3
 
 Load data and run simple regression
 ```{r}
@@ -479,3 +480,95 @@ as expected from a standard normal distributition.
 
 # Problem 4
 
+According to [@burkardt2014truncated pp.20-24], the CDF of a general truncated
+normal distribution bounded on the interval $[a, b]$ is
+
+$$
+\boldsymbol{\psi}(\bar{\mu}, \bar{\sigma}, a, b; x) = 
+\begin{cases} 
+  0 & x\leq a \\
+  \frac{\boldsymbol{\phi}(\bar{\mu}, \bar{\sigma}^2; x) - 
+        \boldsymbol{\phi}(\bar{\mu}, \bar{\sigma}^2; a)}
+       {\boldsymbol{\phi}(\bar{\mu}, \bar{\sigma}^2; b) - 
+        \boldsymbol{\phi}(\bar{\mu}, \bar{\sigma}^2; a)} & a < x < b \\
+  0 & b\leq x 
+\end{cases}
+$$
+Where $\boldsymbol{\phi}$ being the CDF of a normal distribution.
+
+By replacing some of the notation to reflect the notation used in the
+assignment, namely:
+
+* replacing $x$ with $r$
+* using $F$ for notating the CDF of a normal $\boldsymbol{\phi}$
+* the fact that $b = +\infty$ and thus the $\boldsymbol{\phi}(b) = 1$
+* replacing the left bound $a$ with $l$
+
+We get
+
+$$
+G_R(l, \mu, \sigma; r) = 
+\begin{cases}
+  0 & r < l \\
+  \frac{F(r) - F(l)}{1 - F()} & l \leq r
+\end{cases}
+$$
+To find the inverse $G_R^{-1}(u)$ we replace $G$ with $U$ where $U$ represent
+the $Uniform(0,1)$ distribution and solve for $r$
+
+$$
+U = 
+\frac{F(r) - F(l)}{1 - F(l)} \implies F(r) = F(l) + U(1 - F(l))
+\implies r = F^{-1}(F(l) + U(1 - F(l)))
+$$
+
+Which is the inverse cumulative distribution shown in the assignment.
+
+b.) Inverse transform sampling of left-truncated normal distribution
+
+The code below evaluates $G_R^{-1}(u)$ by using the fact that the inverse of
+a CDF of a normal distribution is the quantile function of a normal distribution
+and utilizes the definition of the pdf of a left-truncated normal distribution
+defined by [@burkardt2014truncated pp.20]
+
+```{r}
+inverse_truncated <- function(samples, l, mu, sigma) {
+  # Sample uniform numbers
+  u <- runif(samples, min = 0, max = 1)
+  # Cumulative normal distribution
+  f <- function(x) pnorm(x, mu, sigma)
+  # Inverse cumulative normal distribtution (quantile)
+  f.inv <- function(x) qnorm(x, mu, sigma)
+  # Inverse transform sampling
+  r <- f.inv(f(l) + u*(1 - f(l)))
+  return(r)
+}
+
+# Density of truncated normal distribution 
+# Based on pdf by (Burkardt 2014, 20)
+pdf_truncated <- function(x, l, mu, sigma) {
+  return(dnorm(x, mu, sigma) / (1 - pnorm(l, mu, sigma)))
+}
+
+
+l <- 1.8
+mu <- 2.2
+sigma <- 1.5
+x <- inverse_truncated(10000, l, mu, sigma)
+hist(x, probability = TRUE,  xlab="r", breaks=50)
+curve(pdf_truncated(x, l, mu, sigma), 0, max(x), lwd=2, xlab = "", ylab = "", add = T)
+```
+
+b.) Calculate the theoretical mean
+
+The pdf as defined in the pdf_truncated function was not possible to integrate.
+The function is defined again below and integrated.
+
+```{r}
+fR <- function(r) {r*exp(-(r-2.2)^2/(2*1-5^2))/(sqrt(2*pi*1.5^2)*(1-pnorm(1.8, 2.2, 1.5)))*(r >= 1.8)}
+integrate(fR, 0, 10)$value
+```
+
+\newpage
+
+# Bibliography
