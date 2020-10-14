@@ -559,16 +559,207 @@ hist(x, probability = TRUE,  xlab="r", breaks=50)
 curve(pdf_truncated(x, l, mu, sigma), 0, max(x), lwd=2, xlab = "", ylab = "", add = T)
 ```
 
-b.) Calculate the theoretical mean
+b.) Calculate the theoretical mean and standard deviation
 
 The pdf as defined in the pdf_truncated function was not possible to integrate.
 The function is defined again below and integrated.
 
 ```{r}
-fR <- function(r) {r*exp(-(r-2.2)^2/(2*1-5^2))/(sqrt(2*pi*1.5^2)*(1-pnorm(1.8, 2.2, 1.5)))*(r >= 1.8)}
-integrate(fR, 0, 10)$value
+# r*Fr(r) R integral
+expected <- integrate( function(r, l=1.8, mu=2.2, sigma=1.5) 
+  {
+    r*(exp(-(r-mu)^2 / (2*sigma^2))/(sqrt(2*pi*sigma^2)*
+    (1-pnorm(l, mu, sigma))))*(r>= l)
+  }, -Inf, Inf)$value
+
+# r^2*Fr(r) R integral
+expected_r2 <- integrate( function(r, l=1.8, mu=2.2, sigma=1.5) 
+  {
+    (r^2)*(exp(-(r-mu)^2 / (2*sigma^2))/(sqrt(2*pi*sigma^2)*
+    (1-pnorm(l, mu, sigma))))*(r>= l)
+  }, -Inf, Inf)$value
+
+print(paste("Mean: ", expected))
+print(paste("SD: ", sqrt(expected_r2 - expected^2)))
+print(paste("Simulated mean: ", mean(x)))
+print(paste("Simulated sd: ", sd(x)))
+```
+c.) Simulate R values and S values
+
+```{r}
+# No of samples
+Samp <- 1000
+# Simulate R from truncated normal
+R <- inverse_truncated(Samp, l=1.8, mu=2.2, sigma=1.5)
+# Simulate S conditionally on R
+S <- runif(Samp, 0.5/R, 0.8/R)
+# N x 2 matrix
+m <- cbind(R, S)
+plot(m)
+```
+To obtain the mean vector or **expected value vector** $E[\boldsymbol{X}]$ where
+$$
+\boldsymbol{X_i} = 
+\begin{bmatrix}
+R_i \\
+S_i
+\end{bmatrix} \qquad \text{for} \quad i = {1, 2, \dots, N}
+$$
+is a vector of R values and S values for N simulated vectors. We can estimate the
+mean vector by estimating the individual means for each random variable in the 
+vectors and we get
+
+$$
+E[\boldsymbol{X}] = 
+\begin{bmatrix}
+E[R] \\
+E[S]
+\end{bmatrix} =
+\begin{bmatrix}
+\frac{1}{N}\sum_{i=1}^NR_i \\
+\frac{1}{N}\sum_{i=1}^NS_i \\
+\end{bmatrix}
+$$
+In r:
+
+```{r}
+meanvec <- colMeans(m)
+meanvec
+```
+To calculate the covariance matrix $K_{RS} = \text{cov}(R, S)$ and the correlation
+matrix (which is the covariance matrix of standardized random variables). We
+use the r fucntions cov and cor.
+
+```{r}
+cov(m)
+cor(m)
 ```
 
+d.) Histogram and distribution of S
+
+We plot the values of S as an histogram and use the 
+[R](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/density)
+function for estimating the density to plot the estimated density against the
+histogram.
+
+```{r}
+hist(S, breaks = 20, probability = TRUE)
+lines(density(S))
+```
+
+And we visually can see that the density of S is **not** uniform.
+
+Let's calculate the marginal density $f_s(s)$. The limits of integration utilizes
+the support of the pdf $\frac{0.5}{R} \leq S$ to determine values of R when integrating.
+
+R code below calculates the integral
+
+$$
+f_S(s) = \int_{\frac{0.5}{s}}^{\frac{0.8}{s}} f_{RS}(r, s) dr
+$$
+
+```{r}
+# Marginal distribution of S
+marginal_s <- function(s, l, mu, sigma) {
+  integrate (
+    function(r) {
+      ((exp(-(r-mu)^2 / (2*sigma^2))*10*r) / 
+      (sqrt(2*pi*sigma^2)*(1-pnorm(l, mu, sigma))*3))*(s >= 0.5/r)*(s<=0.8/r)
+    }, 0.5/s, 0.8/s
+  )$value
+}
+
+x <- S
+x <- sort(x, decreasing = FALSE)
+marginal <- numeric(length(x))
+i <- 0
+for (value in x) {
+  i <- i+1
+  marginal[i] <- marginal_s(value, 1.8, 2.2, 1.5)
+}
+hist(x, breaks = 20, probability = TRUE)
+lines(x, marginal, col="red")
+lines(density(S), col="blue")
+```
+And we see that the marginal density plotted in red fits the simulated values of S quite well.
+
+e.) Generate R and S using antithetic variables.
+
+We introduce an antithetic uniform variable when sampling R via the inverse
+transform method. u1 and u2 are negatively correlated and variance
+is reduced.
+```{r}
+inverse_truncated_anti <- function(samples, l, mu, sigma) {
+  # Sample uniform numbers
+  u1 <- runif(samples/2, min = 0, max = 1)
+  u2 <- 1 - u1
+  u <- c(u1, u2)
+  # Cumulative normal distribution
+  f <- function(x) pnorm(x, mu, sigma)
+  # Inverse cumulative normal distribtution (quantile)
+  f.inv <- function(x) qnorm(x, mu, sigma)
+  # Inverse transform sampling
+  r <- f.inv(f(l) + u*(1 - f(l)))
+  return(r)
+}
+
+# No of samples
+Samp <- 1000
+# Simulate R from truncated normal
+R <- inverse_truncated_anti(Samp, l=1.8, mu=2.2, sigma=1.5)
+# Simulate S conditionally on R
+S <- runif(Samp, 0.5/R, 0.8/R)
+# N x 2 matrix
+m <- cbind(R, S)
+plot(m)
+```
+Still, we don't observe an significant reduction in the variance of the (R, S) values. 
+
+e.) Calculate hospital beds needed
+
+Import SEIR-model
+
+```{r}
+source("seir_model.R")
+f <- seir_sim()
+```
+
+```{r}
+source("seir_model.R") # assumed already run
+nsim <- 200 # number of simulation replica
+days <- 366 # 366 days in 2020.
+population <- 10^6
+
+t <- which(f$dates<="2020-12-31" & f$dates>="2020-01-01")
+m <- matrix(,nsim, days)
+for(i in 1:nsim){
+  ff <- seir_sim(R0max = R[i],
+                 soc_dist_Rfac = S[i])
+  m[i,] <- population*(ff$ode[t,"HH"] + ff$ode[t,"HC"] + ff$ode[t,"CC"])
+}
+
+rowmax <- apply(m, 1, function(x) max(x))
+hist(rowmax, probability = TRUE, breaks = 30, 
+     main="Maximum number of required beds during 2021 pr 1000000")
+```
+f.) Uncertainty in daily required hospital beds
+
+Plot cumulative sums of daily needed beds over 2021
+
+```{r}
+library(ggplot2)
+cummat <- matrix(,nsim, 365)
+
+cl <- rainbow(200)
+
+plot(0,0,xlim = c(0,365),ylim = c(0,60000), type = "n")
+for (i in 1:nsim) {
+  lines(cumsum(m[i,]), col=cl[i], type="l", lw=0.1)
+}
+```
+
+We see that for our 200 simulations, the cumulative sum of daily beds needed
+at the end of the year is in the range of 30000 - 55000.
 \newpage
 
 # Bibliography
