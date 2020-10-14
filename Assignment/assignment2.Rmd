@@ -80,9 +80,58 @@ Which is the proposed estimator $\theta_{CMC}$.
 
 A.) Show that $1_D(X_i, Y_i)$ has a bernoulli distribution with $p=\frac{\pi}{4}$
 
-The function returns success or failure, and is therefore has aa potential '
-bernoulli distribtion. To calculate $P(X^2 + Y^2 \leq 1)$ we need to calculate
-the 
+The function returns 1 / success or 0 / failure, and is therefore has a potential
+bernoulli distrbution. To calculate $P(X^2 + Y^2 \leq 1)$ we need to calculate
+the integral
+
+$$
+P({X,Y} \in X^2 + Y^2 \leq 1) = \int_A f_{XY}(x,y) dx dy
+$$
+Where  $A$ is the region of the $X^2 + Y^2 \leq 1$ i.e disc with radius 1.
+The pdf of a bivariate uniform distribution is a single constant c. 
+To find this constant, we use the fact that the probability of a point being 
+inside the sample space $\Omega$ is 1 and
+
+$$
+\int_\Omega f_{XY}(x, y) dx dy = 1 \implies c \int_\Omega dxdy = 1
+$$
+Where the integral is the area of the sample space and we get 
+$$
+c \cdot \text{area of square} = 1 \implies c = \frac{1}{\text{area of square}}
+\implies f_{xy} = c = \frac{1}{4}
+$$
+and then the integral of a point being inside the unit square is
+
+$$
+\int_A f_{XY}(x,y) dx dy = c \cdot \text{area of circle}
+$$
+and we get $\frac{\pi}{4}$. The indicator function therefore is a bernoulli
+distribution with probability $\frac{\pi}{4}$ of being inside the unit circle.
+
+b.) Which distribution does $Z = \sum_{i=1}^{n} 1_d(X_i, Y_i)$ have
+
+If we sum N independent bernoulli samples/trials with constant p we have a
+binomial distribution. P is constant as discussed above and the trials are
+independent due to $X$ and $Y$ being independent uniform variables. 
+
+The sum is therefore a valid binomial distributed random variable 
+$Z \sim B(n, \frac{\pi}{4})$. The expected value of a binomial distribution is
+$E[Y] = n \cdot p = \frac{n\pi}{4}$
+
+The expected value of the estimator $\theta_{CMC}$ is then
+
+$$
+E[\theta_{CMC}] = \frac{4}{n} \cdot Y = \frac{4}{n} \cdot E[Y] = \frac{4}{n}
+\cdot \frac{n\pi}{4} = \pi
+$$
+And we see that the the estimator has expected value $\pi$.
+
+The variance of the estimator $\theta_{CMC}$ is
+$$
+Var(\theta_{CMC}) = Var(\frac{4}{n}Y) = \frac{16}{n^2}Var(Y) = 
+\frac{16}{n^2} n\frac{\pi}{4}(1-\frac{\pi}{4}) = 
+\frac{4(1- \frac{\pi}{4})\pi}{n}
+$$
 
 c) Implementation of monte carlo estimate of $\theta_{CMC}$ with $N = 1000$
  
@@ -103,18 +152,24 @@ mcEstimatePi <- function (Sims) {     # function for monte carlo estimate
 }
 
 Sims <- 10000                            # Simulations of pi
-mcPi <- mcEstimatePi(Sims)        # Function call
+mcPi <- mcEstimatePi(Sims)               # Function call
 summary(mcPi)                            # Summary stats for MC estimate
 hist(mcPi)                               # Histogram
 ```
 ```{r}
-mean(mcPi)
-var(mcPi)
+mean <- mean(mcPi)
+var <- var(mcPi)
+exact_mean <- pi
+exact_var <- (4*(1 - (pi/4))*pi / Sims)
+print(paste("Simulated mean: ", mean))
+print(paste("Exact mean: ", exact_mean))
+print(paste("Simulated var: ", var))
+print(paste("Exact var: ", exact_var))
 ```
 
 We see that the distribution is approxamately normally distrobuted with sample
 mean at approx $Mean = 3.141$ and sample variance at approx $Variance =  0.00260$.
-This is du to the central limit theorem because our estimate of pi is based on a
+This is due to the central limit theorem because our estimate of pi is based on a
 sum of several samples.
 
 d.) Calculate probability of correctly estimating to two decimal places
