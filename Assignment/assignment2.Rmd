@@ -40,7 +40,7 @@ A.) Argue for why $\theta_{CMC}$ is a monte carlo estimator for the integral abo
 
 According to [this](https://en.wikipedia.org/wiki/Monte_Carlo_integration#overview) 
 wikipedia article which  was accessed the \formatdate{09}{10}{2020}, 
-the monte carlo estimate for a multidimensional definite integral
+the monte carlo estimate for a multidimensional definite integral [@wiki:mcint]
 
 
 $$
@@ -71,7 +71,7 @@ In our case, which is also very similar to the
 [example](https://en.wikipedia.org/wiki/Monte_Carlo_integration#Example) on the 
 wikipedia article for monte carlo integration, $\Omega = [-1, 1] \times [-1, 1]$
 with $V = \int_{-1}^1 \int_{-1}^1 dxdy = 4$ which gives the following crude way 
-to estimate $I$
+to estimate $I$ [@wiki:mcint]
 $$
 I = \frac{4}{N}\sum_{i=1}^{N}1_D(X_i, Y_i) 
 $$
@@ -140,7 +140,7 @@ indicator1 <- function (x, y) {          # Indicator function for unit circle
   return((x^2+y^2 <= 1))
 }
 
-mcEstimatePi <- function (Sims) {     # function for monte carlo estimate 
+mcEstimatePi <- function (Sims) {        # function for monte carlo estimate 
   mcPi <- numeric(Sims)
   for (i in 1:Sims) {
     N <- 1000                            # Number of samples
@@ -154,7 +154,8 @@ mcEstimatePi <- function (Sims) {     # function for monte carlo estimate
 Sims <- 10000                            # Simulations of pi
 mcPi <- mcEstimatePi(Sims)               # Function call
 summary(mcPi)                            # Summary stats for MC estimate
-hist(mcPi)                               # Histogram
+hist(mcPi, probability = TRUE)           # Histogram
+lines(density(mcPi))                     # Plot empirical density
 ```
 ```{r}
 mean <- mean(mcPi)
@@ -175,6 +176,7 @@ sum of several samples.
 d.) Calculate probability of correctly estimating to two decimal places
 
 ```{r}
+# count average of booleans (probability) of estimatesfrom 3.14 to 3.149999...
 mean(mcPi < 3.15) - mean(mcPi <= 3.14)
 ```
 e.) Introducing antithetic variables
@@ -195,7 +197,7 @@ cov(-x, -y)
 f.) Let's see if our variance is reduced by doing exercise c. with the new variables.
 
 ```{r}
-mcEstimatePi <- function (Sims) {     # function for monte carlo estimate 
+mcEstimatePi <- function (Sims) {        # function for monte carlo estimate 
   mcPi <- numeric(Sims)
   for (i in 1:Sims) {
     N <- 1000                            # Number of samples
@@ -219,7 +221,7 @@ shift <- function(u) {                   # Introducing shift function
   return(((u+2.0) %% 2.0) - 1.0)
 }
 
-mcEstimatePi <- function (Sims) {     # function for monte carlo estimate 
+mcEstimatePi <- function (Sims) {        # function for monte carlo estimate 
   mcPi <- numeric(Sims)
   for (i in 1:Sims) {
     N <- 1000                            # Number of samples
@@ -241,11 +243,15 @@ var(mcPi)
 h.) Use important sampling
 
 ```{r}
+# zero mean independent Normal
 f <- function (x, y, sigma) {
-  return((1/(2*pi*sigma^2))*exp(-(x^2)/(2*sigma^2))*exp(-(y^2)/(2*sigma^2)))
+  const <- (1/(2*pi*sigma^2))
+  exp1 <- exp(-x^2/(2*sigma^2))
+  exp2 <- exp(-x^2/(2*sigma^2))
+  return(const*exp1*exp2)
 }
 
-mcEstimatePi <- function (Sims, sigma) {  # function for monte carlo estimate 
+mcEstimatePi <- function (Sims, sigma) {    # function for monte carlo estimate 
   mcPi <- numeric(Sims)
   for (i in 1:Sims) {
     N <- 1000                                 # Number of samples
@@ -258,9 +264,20 @@ mcEstimatePi <- function (Sims, sigma) {  # function for monte carlo estimate
 ```
 
 ```{r}
-mcPi <- mcEstimatePi(10000, 0.3)
-summary(mcPi)
+sigmas <- c(0.3, 0.624127, 1.0)
+
+for (s in sigmas) {
+  mcPi <- mcEstimatePi(10000, s)
+  print(summary(mcPi))
+}
 ```
+The estimators are not that good and i was not anble to replicate the resutls
+described in the assignment, which makes my findings quite uncertain. My best
+answer to why this estimator did not work is mainly due to tail behaviour and 
+$f(x)$ not being an appropriate function for this use. 
+
+But due to the fact that i was not able to replicate the results also suggests
+a falty implementation above.
 
 # Problem 2
 
@@ -287,13 +304,12 @@ Which in our case gives
 ```{r}
 integrate(lambdastorm, 0, 1)
 ```
-Which we have confirmed by the simulation above which has a simulated mean of 
-approximately $16.3$
 
 Let's find the expected number of storms in 2025 by calculating the integral
 ```{r}
 integrate(lambdastorm, 5, 6)
 ```
+
 And let's find the expected value and standard deviation of storms in 
 2020 and 2021 combined
 
@@ -325,13 +341,19 @@ simtNHPP <- function(a,b,lambdamax,lambdafunc){
   # Simple check that a not too small lambdamax is set
   if(max(lambdafunc(seq(a,b,length.out = 100)))>lambdamax)
     stop("lambdamax is smaller than max of the lambdafunction")
+  
   # First simulate HPP with intensity lambdamax on a to b
-  expectednumber <- (b-a)*lambdamax  
-  Nsim <- 3*expectednumber  # Simulate more than the expected number to be certain to exceed stoptime
-  timesbetween <- rexp(Nsim,lambdamax) # Simulate interarrival times
-  timesto <- a+cumsum(timesbetween)   # Calculate arrival times starting at a
-  timesto <- timesto[timesto<b] # Dischard the times larger than b
-  Nevents <- length(timesto) # Count the number of events
+  expectednumber <- (b-a)*lambdamax
+  # Simulate more than the expected number to be certain to exceed stoptime
+  Nsim <- 3*expectednumber
+  # Simulate interarrival times
+  timesbetween <- rexp(Nsim,lambdamax)
+  # Calculate arrival times starting at a
+  timesto <- a+cumsum(timesbetween)
+  # Discard the times larger than b
+  timesto <- timesto[timesto<b]
+  # Count the number of events
+  Nevents <- length(timesto)
   # Next do the thinning. Only keep the times where u<lambda(s)/lambdamax
   U <- runif(Nevents)
   timesto <- timesto[U<lambdafunc(timesto)/lambdamax]  
@@ -489,7 +511,7 @@ a.) Calculate $B$ bootstrap samples for $R^2$ and plot histogram
 
 Code below is borrowed both from bootstra_examples.R file from the lectures
 as well as [this](https://www.statmethods.net/advstats/bootstrapping.html)
-article by statmethods.net
+article by statmethods.net [@statsmetboot]
 
 ```{r}
 # Bootstrap 95% CI for R-Squared
@@ -782,10 +804,10 @@ f <- seir_sim()
 ```{r}
 source("seir_model.R") # assumed already run
 nsim <- 200 # number of simulation replica
-days <- 366 # 366 days in 2020.
+days <- 365 # 366 days in 2021.
 population <- 10^6
 
-t <- which(f$dates<="2020-12-31" & f$dates>="2020-01-01")
+t <- which(f$dates<="2021-12-31" & f$dates>="2021-01-01")
 m <- matrix(,nsim, days)
 for(i in 1:nsim){
   ff <- seir_sim(R0max = R[i],
@@ -802,19 +824,18 @@ f.) Uncertainty in daily required hospital beds
 Plot cumulative sums of daily needed beds over 2021
 
 ```{r}
-library(ggplot2)
 cummat <- matrix(,nsim, 365)
-
 cl <- rainbow(200)
 
-plot(0,0,xlim = c(0,365),ylim = c(0,60000), type = "n")
+plot(0,0,xlim = c(0,365),ylim = c(0,70000), type = "n")
 for (i in 1:nsim) {
-  lines(cumsum(m[i,]), col=cl[i], type="l", lw=0.1)
+  lines(cumsum(m[i,]), col=cl[i], type="l", lw=0.3)
 }
 ```
 
 We see that for our 200 simulations, the cumulative sum of daily beds needed
-at the end of the year is in the range of 30000 - 55000.
+at the end of the year is in the range of 30000 - 70000.
+
 \newpage
 
 # Bibliography
