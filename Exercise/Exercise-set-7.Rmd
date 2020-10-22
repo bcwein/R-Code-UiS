@@ -1,0 +1,15 @@
+---
+title: "Exercise set 6"
+output: pdf_document
+author: Bjørn Christian Weinbach
+date: \today
+---
+
+Clear R environment
+
+```{r}
+rm(list = ls())
+```
+
+# Exercise 6.6 in Rizzo
+
