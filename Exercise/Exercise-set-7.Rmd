@@ -1,8 +1,15 @@
 ---
-title: "Exercise set 6"
-output: pdf_document
-author: Bjørn Christian Weinbach
+title: "Exercise set 7"
+author: "Bjørn Christian Weinbach"
 date: \today
+header-includes:
+   - \usepackage{bbm}
+   - \usepackage[UKenglish]{babel}
+   - \usepackage[T1]{fontenc}
+   - \usepackage[nodayofweek,level]{datetime}
+urlcolor: blue
+output: pdf_document
+bibliography: exercises.bib
 ---
 
 Clear R environment
@@ -11,5 +18,134 @@ Clear R environment
 rm(list = ls())
 ```
 
-# Exercise 6.6 in Rizzo
+# Problem 0
+$N = 10$ measurments of the measurements of the hardness of a new material 
+(alloy) gave the following data:
 
+\begin{center}
+  \begin{tabular}{ c c c c c }
+   168 & 185 & 164 & 182 & 169 \\
+   181 & 172 & 185 & 172 & 180 \\  
+  \end{tabular}
+\end{center}
+
+A typical approach is to assume that the hardness measurements follow a 
+$N(\mu; \sigma^2)$ distribution.
+
+## Calculate the empirical mean $\hat{\mu}$ and standard deviation
+$\hat{\sigma}$.
+
+```{r}
+data <- c(168, 185, 164, 182, 169, 181, 172, 186, 172, 180)
+
+print(paste("Empirical mean: ", mean(data)))
+print(paste("Empirical sd: ", sd(data)))
+```
+
+## Calculate the standard deviation of $\hat{\mu}$
+
+According to the wikipedia article on standard error accessed 
+\formatdate{22}{10}{2020} [@wiki:SampleMean] For each random variable, the sample 
+mean is a good estimator of the population 
+mean, where a "good" estimator is defined as being efficient and unbiased. 
+Of course the estimator will likely not be the true value of the population 
+mean since different samples drawn from the same distribution will give 
+different sample means and hence different estimates of the true mean. 
+Thus the sample mean is a random variable, not a constant, 
+and consequently has its own distribution.
+
+We can therefore calculate the standard deviation of $\hat{\mu}$, also called
+the standard error of the mean as follows:
+
+\begin{equation}
+  \sigma_{\bar{X}} = \frac{\sigma}{N}
+\end{equation}[@wiki:StandardError]
+
+Since the population mean is seldom known. We can estimate this like so:
+
+\begin{equation}
+  \sigma_{\bar{X}} \approx \frac{s}{N}
+\end{equation}
+
+Where $s$ is the sample standard deviation.
+
+In R:
+
+```{r}
+print(paste("Standard error: ", sd(data)/sqrt(length(data))))
+```
+## Calculate $95\%$ confidence intervals for $\mu$ and $\sigma$
+
+Since we have a unknown $\mu$ and $\sigma$ for the population and the sample
+size is small, we will use a T values for our confidence interval for the population mean.
+
+The confidence interval is
+\begin{equation}
+[\bar{x} + t_{n-1, \alpha/2} \cdot \frac{s}{\sqrt{n}}, 
+ \bar{x} + t_{n-1, 1 - \alpha/2} \cdot \frac{s}{\sqrt{n}}]
+\end{equation}
+
+in R:
+
+```{r}
+# Calculate sample mean, sd and no of observations
+xbar <- mean(data)
+s <- sd(data)
+n <- length(data)
+
+# Alpha
+a <- 0.05
+
+# Calculate confidence interval. qt is T-distribution
+left <- xbar + qt(a/2, n-1) * s/sqrt(n)
+right <- xbar + qt(1 - (a/2), n-1) * s/sqrt(n)
+ci <- c(left, right)
+
+# Display confidence interval
+ci
+```
+To calculate the confidence interval for $\sigma$ we use the formula in the 
+text of the exercise set. 
+
+```{r}
+left <- sqrt((n-1)*s^2 / qchisq(1 - a/2, df=n-1))
+right <- sqrt((n-1)*s^2 / qchisq(a/2, df=n-1))
+ci <- c(left, right)
+ci
+```
+## Bootstrapping $\hat{\mu}$
+
+Now we resort to bootstrapping to estimate the calculations we have above from our data.
+We first do this for the statistic $\hat{\mu}$
+
+
+```{r}
+library(boot)
+
+# Function for statistic - sample mean
+meanestfunc <- function(data,i)
+  mean(data[i])
+
+boot.obj <- boot(data=data, statistic = meanestfunc, R=5000)
+boot.obj
+boot.ci(boot.obj,type=c("norm","basic","perc","bca"))
+```
+We see that our calculations for the standard error is close to the estimated 
+standard error by bootstrapping. The confidence interval is also close to our interval. 
+Though the calculated one used t-values and is therefore slightly wider.
+
+## Bootstrapping $\hat{\sigma}$
+
+```{r}
+# Function for statistic - sample mean
+stdfunc <- function(data,i)
+  sd(data[i])
+
+boot.obj <- boot(data=data, statistic = stdfunc, R=5000)
+boot.obj
+boot.ci(boot.obj,type=c("norm","basic","perc","bca"))
+```
+
+\newpage
+
+# Bibliography
