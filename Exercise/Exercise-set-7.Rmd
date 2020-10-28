@@ -58,13 +58,13 @@ We can therefore calculate the standard deviation of $\hat{\mu}$, also called
 the standard error of the mean as follows:
 
 \begin{equation}
-  \sigma_{\bar{X}} = \frac{\sigma}{N}
+  \sigma_{\bar{X}} = \frac{\sigma}{\sqrt{N}}
 \end{equation}[@wiki:StandardError]
 
 Since the population mean is seldom known. We can estimate this like so:
 
 \begin{equation}
-  \sigma_{\bar{X}} \approx \frac{s}{N}
+  \sigma_{\bar{X}} \approx \frac{s}{\sqrt{N}}
 \end{equation}
 
 Where $s$ is the sample standard deviation.
@@ -145,6 +145,311 @@ boot.obj <- boot(data=data, statistic = stdfunc, R=5000)
 boot.obj
 boot.ci(boot.obj,type=c("norm","basic","perc","bca"))
 ```
+# Problem 1
+
+Consider the 1-dimensional random walk Metropolis Hastings function given
+in the R-example.
+
+In typical applications of MCMC, the log-target function ($\text{log} \ g(\boldsymbol{\theta})$ in the lecture notes)
+is often expensive to evaluate. Modify the code so that only one evaluation of log-target
+function per MCMC iteration is required. Check that your implementation is still correct
+using a target distribution of your choice.
+
+
+Modified code:
+
+```{r}
+# general 1d Gaussian proposal random walk MH
+oneD.RWMH <- function(lprob, #notice log-density kernel!
+                     sigma=1.0,
+                     theta1=0.0,
+                     n.iter=10000){
+  # space for output
+  output <- numeric(n.iter)
+  # first iterate given
+  output[1] <- theta1
+  # Calculate probability of theta 1
+  lp.old <- lprob(theta1)
+  # main iteration loop
+  for(t in 2:n.iter){
+    # proposal
+    thetaStar <- output[t-1] + rnorm(1,sd=sigma)
+    # accept probability, for numerical stability we compute
+    lp.star <- lprob(thetaStar)
+    # the log-accept prob, and then take exp
+    alpha <- exp(min(0.0,lp.star-lp.old))
+    # accept/reject step
+    if(runif(1)<alpha && is.finite(alpha)){
+      output[t] <- thetaStar
+    } else {
+      output[t] <- output[t-1]
+    }
+  }
+print(paste0("RWMH done, accept prob : ",mean(abs(diff(output))>1.0e-14)))
+  return(output)
+} 
+
+lp_std_norm <- function(x){return(dnorm(x, mean=0, sd=1, log=TRUE))}
+
+# try algorithm (change initial condition and sigma for illustration)
+out <- oneD.RWMH(lp_std_norm, theta1 = 0.0, sigma=1.0)
+par(mfrow=c(2,1))
+plot(1:length(out),out,pch=20,cex=0.1,xlab="MCMC iteration #")
+hist(out)
+mean(out)
+sd(out)
+```
+
+# Problem 2
+
+Considering the situation in example 11.3, we will try to use
+Metropolis-Hastings algorithm with the target function
+being the posterior distribution for $p$
+
+\begin{equation}
+  g(p) = 431 \log(p) + 4 \log(1 - p)
+\end{equation}
+
+## Find a proposal $\sigma$ that result in an acceptance-rate
+of $20\%$ to $40\%$.
+
+```{r}
+# p-target
+lprob.p <- function(p){
+  if(p<0.0 || p>1.0) return(-1e100) 
+  return(431.0*log(p) + 4.0*log(1.0-p))
+}
+# run RWMH and compare to reference
+out <- oneD.RWMH(lprob.p,sigma=0.01,theta1=0.99,n.iter=500000)
+# sigma = 0.02 seems like a good choice
+hist(out,probability = TRUE)
+xg <- seq(from=0.96,to=1.0,length.out = 1000)
+lines(xg,dbeta(xg,shape1=432,shape2=5),col="red")
+# looks correct, 
+```
+
+## Find a good proposal for mu that gives a acceptance rate of $20-40\%$
+
+```{r}
+# mu-target
+lprob.mu <- function(mu){
+  if(mu<0.0) return(-1.0e100)
+  return(431.0*log(mu/(1.0+mu)) - 6.0*log(1.0+mu))
+}
+
+out.mu  <- oneD.RWMH(lprob.mu,sigma=150.0,theta1=0.99/(1.0-0.99),n.iter=500000)
+# sigma=150 seems like a reasonable choice
+```
+
+## Sample $\mu$
+
+```{r}
+#inverse transformation to obtain p from mu:
+out.mu.p <- out.mu/(1.0+out.mu)
+
+# plot transformed samples
+hist(out.mu.p,probability = TRUE)
+lines(xg,dbeta(xg,shape1=432,shape2=5),col="red")
+# also looks correct
+
+```
+
+# Problem 3
+Let 
+\begin{equation}
+\boldsymbol{P} = 
+  \begin{pmatrix}
+  1 & 1 \\
+  1 & 2
+  \end{pmatrix}
+\end{equation}
+
+and
+
+\begin{equation}
+\boldsymbol{m} = 
+  \begin{pmatrix}
+  1 \\
+  -1
+  \end{pmatrix}
+\end{equation}
+
+Below we is an implementation of a bivariate RWMH algorithm in R:
+
+```{r}
+# bivariate RWMH method
+twoDRWMH <- function(lprob, # log-probability density kernel
+                     Sigma=diag(2), # default proposal covariance = identity matrix
+                     theta1=c(0.0,0.0), # default initial configuration
+                     n.iter=10000){
+  # allocate output space
+  out <- matrix(0.0,n.iter,2)
+  out[1,] <- theta1
+  
+  # store old lprob
+  lp.old <- lprob(theta1)
+  
+  # cholesky factorization of Sigma for fast sampling
+  L <- t(chol(Sigma)) #lower triangular factor
+  
+  # accept counter
+  Nacc <- 0
+  # main iteration loop
+  for(i in 2:n.iter){
+    # proposal
+    thetaStar <- out[(i-1),] + L%*%rnorm(2)
+    
+    # evaluate
+    lp.star <- lprob(thetaStar)
+    
+    # accept prob
+    alpha <- exp(min(0.0,lp.star-lp.old))
+    
+    # accept/reject
+    if(runif(1)<alpha && is.finite(alpha)){
+      # accept
+      out[i,] <- thetaStar
+      lp.old <- lp.star
+      Nacc <- Nacc+1
+    } else {
+      out[i,] <- out[(i-1),]      
+    }
+  } # main iteration loop
+  
+  print(paste0("RWMH done, accept rate : ",Nacc/(n.iter-1)))
+  return(out)
+} # function
+```
+
+## Test the implementation 
+
+In the first case, we will test the implementation by trying to sample
+the following cases:
+
+\begin{itemize}
+  \item A bivariate normal distribution $N(\boldsymbol{m}, \boldsymbol{P}^{-1})$
+  \item A bivariate t-distribution with location $\boldsymbol{m}$, scale matrix
+  $\boldsymbol{P}^{-1}$ and $\nu = 4$ degrees of freedom.
+\end{itemize}
+
+### Bivariate normal distribution
+
+The bivariate normal $N(\boldsymbol{m}, \boldsymbol{P}^{-1})$ has
+log density:
+
+\begin{equation}
+\log(\boldsymbol{x}) = -0.5(\boldsymbol{x} - \boldsymbol{m})^T \boldsymbol{P}
+  (\boldsymbol{x} - \boldsymbol{m})
+\end{equation}
+
+In R:
+
+```{r}
+P <- matrix(c(1,1,1,2),2,2)
+m <- c(1.0,-1.0)
+Pinv <- solve(P)
+
+### test 1 - bivariate normal distribution
+lp_gauss <- function(x){return(-0.5*t(x-m)%*%P%*%(x-m))}
+
+out.gauss <- twoDRWMH(lp_gauss,Sigma=2.0*Pinv,
+                      theta1 = m,n.iter=100000)
+# estimated mean
+colMeans(out.gauss) 
+m
+
+# estimated covariance
+cov(out.gauss)
+Pinv
+
+# check x1 marginal (should N(m[1],Pinv[1,1])) 
+par(mfrow=c(1,1))
+hist(out.gauss[,1],probability = TRUE)
+xg <- seq(from=min(out.gauss[,1]),to=max(out.gauss[,1]),length.out = 1000)
+lines(xg,dnorm(xg,mean=m[1],sd=sqrt(Pinv[1,1])),col="red")
+```
+### Bivariate t-distribution
+
+The log density for our t-distribution is
+
+\begin{equation}
+\log g(\boldsymbol{x}) = -3 \log(1 + 0.25(\boldsymbol{x} - \boldsymbol{m})^T 
+  P(\boldsymbol{x} - \boldsymbol{m}))
+\end{equation}
+
+in R:
+
+```{r}
+lp_t <- function(x){return(-3.0*log(1.0+0.25*t(x-m)%*%P%*%(x-m)))}
+
+out.t <- twoDRWMH(lp_t,Sigma=3.0*Pinv,
+                      theta1 = m,n.iter=100000)
+# check mean (should be = m)
+colMeans(out.t) 
+m
+
+# check covariance (should be nu/(nu-2)*Pinv = 2*Pinv)
+cov(out.t)
+2*Pinv
+```
+
+# Problem 4
+
+Consider the bayesian model:
+
+\begin{itemize}
+  \item Parameter $\mu$ with prior distribution $\mu \sim N(0, 10^2)$
+  \item Parameter $\tau$ with prior distribution $\tau \sim \text{Exp}(1)$
+  \item Observations $\boldsymbol{y} = [y_1, \dots, y_n]$ where each 
+    $y_i | \mu \sim N(\mu, \tau^{-1})$ independently
+\end{itemize}
+
+The posterior distribution of $\boldsymbol{\theta} = [\mu, \tau]$ may be written as
+
+\begin{equation}
+  p(\boldsymbol{\theta}|\boldsymbol{y}) \propto \left( \prod_{i=1}^{n} 
+    p(y_i|\mu, \tau) \right)p(\mu)p(\tau)
+\end{equation}
+
+In R:
+
+```{r}
+# from exercise text
+y <- c(1.2, 6.3, 5.4, 3.4, 7.5, 4.8, 1.9)
+lprob <- function(theta){
+  mu <- theta[1]
+  tau <- theta[2] 
+  if(tau<0.0) return(-1e100) # log target effectively - infinity for negative tau
+  s.dev <- sqrt(1.0/tau)
+  loglike <- sum(dnorm(y,mean=mu,sd=s.dev,log=TRUE)) 
+  mu.log.pri <- dnorm(mu,mean=0,sd=10,log=TRUE) 
+  tau.log.pri <- -tau # = log(exp(-tau)) 
+  return(loglike+mu.log.pri+tau.log.pri) 
+}
+```
+
+### Obtain 10000 samples from the posterior distribution
+
+```{r}
+# run RWMH sampler from previous point
+Sig <- matrix(c(0.8,0.0,0.0,0.014),2,2) # obtained from initial run with identity proposal cov
+out.mu.tau <- twoDRWMH(lprob=lprob,Sigma=2.0*Sig,theta1 = c(mean(y),1.0/var(y)),n.iter = 100000)
+# OK tuning
+
+# make data frame for easier presentation
+out.sigma <- 1.0/sqrt(out.mu.tau[,2])
+out.df <- data.frame(out.mu.tau,out.sigma)
+colnames(out.df) <- c("mu","tau","s")
+# print summary statistics
+summary(out.df)
+# print standard deviations
+print("standard deviations : ")
+sqrt(diag(var(out.df)))
+```
+
+### Scatterplot of $\mu$ and $\tau$
+
+
 
 \newpage
 
