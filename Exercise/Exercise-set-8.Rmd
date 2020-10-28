@@ -1,0 +1,64 @@
+---
+title: "Exercise set 8"
+author: "Bjørn Christian Weinbach"
+date: \today
+header-includes:
+   - \usepackage{bbm}
+   - \usepackage[UKenglish]{babel}
+   - \usepackage[T1]{fontenc}
+   - \usepackage[nodayofweek,level]{datetime}
+urlcolor: blue
+output: pdf_document
+bibliography: exercises.bib
+---
+
+Clear R environment
+
+```{r}
+rm(list = ls())
+```
+
+# Exercise 8.4
+
+Note: MLE for $\hat\lambda = n/\sum_{i=1}^{n} X_i$, where $X$ denote time
+between failure
+
+Refer to the air-conditioning data set **aircondit** provided in the boot
+library. The 12 observations are the times in hours between failures of 
+air-conditioning equipment
+
+\begin{center}
+  \begin{tabular}{ c c c c c c c c c c c c}
+   3 & 5 & 7 & 18 & 43 & 85 & 91 & 98 & 100 & 130 & 230 & 487 \\
+  \end{tabular}
+\end{center}
+
+Assume that the times between failures follow an exponential model with rate
+$\lambda$. Obtain the MLE of the hazard rate $\lambda$ and use bootstrap to 
+estimate the bias and standard error of the estimate.
+
+in R:
+
+```{r}
+library(boot)
+
+# MLE for hazard rate of exponential distributed data
+mle <- function(data, i) {
+  return(length(data[i])/sum(data[i]))
+}
+
+# bootstrapping with 1000 replications
+results <- boot(data=aircondit$hours, statistic = mle, R=1000)
+
+# view results
+results
+plot(results)
+
+# get 95% confidence interval
+boot.ci(results, type=c("bca", "norm", "perc"))
+```
+# Exercise 8.5
+
+\newpage
+
+# Bibliography
