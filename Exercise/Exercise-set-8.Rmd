@@ -135,7 +135,85 @@ hist(out)
 ```
 
 This implementation uses standard normal proposals. We can see from the plot that the random walk stops suddenly on values
-far from the center of teh distribution and skews the samples. Let's perform some diagnostics:
+far from the center of the distribution and skews the samples. Let's perform some diagnostics:
+
+```{r}
+#
+# convergence tests 
+#
+library(coda)
+#
+ESS <- function(x){ return(as.numeric(coda::effectiveSize(x))) }
+ESS(out)
+ESS(out)/length(out)
+```
+
+```{r}
+# Geweke (single chain test)
+#
+# make an mcmc object used by the coda package
+chain.mcmc <- mcmc(data=out)
+varnames(chain.mcmc) <- "theta"
+# returns z-score (to be compared two-sided with standard normal)
+geweke.diag(chain.mcmc)
+# check if we should discard more burn-in
+geweke.plot(chain.mcmc) 
+```
+\newpage
+
+# Exercise 11.6
+
+Implement a random walk Metropolis sampler for generating the standard Laplace distribution.
+For the increment, simulate from a normal distribution. Compare the chains generated when
+different variances are used for the proposal distribution. Also, compute the acceptance 
+rates of each chain.
+
+```{r}
+# general 1d Gaussian proposal random walk MH
+oneD.RWMH <- function(prob,
+                     sigma=1.0,
+                     theta1=0.0,
+                     n.iter=10000){
+  # space for output
+  output <- numeric(n.iter)
+  # first iterate given
+  output[1] <- theta1
+  # Calculate probability of theta 1
+  p.old <- prob(theta1)
+  # main iteration loop
+  for(t in 2:n.iter){
+    # proposal
+    thetaStar <- output[t-1] + rnorm(1,sd=sigma)
+    # accept probability, for numerical stability we compute
+    p.star <- prob(thetaStar)
+    # the log-accept prob, and then take exp
+    alpha <- min(1,p.star/p.old)
+    # accept/reject step
+    if(runif(1)<alpha && is.finite(alpha)){
+      output[t] <- thetaStar
+    } else {
+      output[t] <- output[t-1]
+    }
+  }
+print(paste0("RWMH done, accept prob : ",mean(abs(diff(output))>1.0e-14)))
+  return(output[1000:length(output)])
+} 
+
+laplace <- function(x){return(0.5*exp(-abs(x)))}
+
+# try algorithm (change initial condition and sigma for illustration)
+out <- oneD.RWMH(laplace, theta1 = 0.0, sigma=1.3)
+par(mfrow=c(2,1))
+plot(1:length(out),out,pch=20,cex=0.1,xlab="MCMC iteration #")
+hist(out)
+```
+Let's perform some diagnostics
+
+```{r}
+ESS <- function(x){ return(as.numeric(coda::effectiveSize(x))) }
+ESS(out)
+ESS(out)/length(out)
+```
 
 ```{r}
 #
@@ -152,8 +230,7 @@ varnames(chain.mcmc) <- "theta"
 geweke.diag(chain.mcmc)
 # check if we should discard more burn-in
 geweke.plot(chain.mcmc) 
-
 ```
-\newpage
+
 
 # Bibliography
