@@ -58,6 +58,29 @@ plot(results)
 boot.ci(results, type=c("bca", "norm", "perc"))
 ```
 # Exercise 8.5
+Refer to exercise 8.4. Compute $95\%$ confidence interval for the mean time 
+between failures by the standard normal, basic, percentile and BCa methods.
+
+```{r}
+# MLE for hazard rate of exponential distributed data
+meantimeest <- function(data, i) {
+  rate <- length(data[i])/sum(data[i])
+  return(1/rate)
+}
+
+# bootstrapping with 1000 replications
+results <- boot(data=aircondit$hours, statistic = meantimeest, R=1000)
+
+# view results
+results
+plot(results)
+
+# get 95% confidence interval
+boot.ci(results, type=c("norm", "basic", "perc", "bca"))
+```
+
+# Exercise 11.3
+
 
 \newpage
 
