@@ -449,7 +449,18 @@ sqrt(diag(var(out.df)))
 
 ### Scatterplot of $\mu$ and $\tau$
 
+```{r}
+#scatterplot
+plot(out.df$mu,out.df$s,pch=20,cex=0.1)
+```
 
+### Credibility interval for $s$
+
+```{r}
+# credible interval for s
+CI <- quantile(out.df$s,probs = c(0.025,0.975))
+CI
+```
 
 \newpage
 
