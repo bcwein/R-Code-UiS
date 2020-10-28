@@ -81,7 +81,79 @@ boot.ci(results, type=c("norm", "basic", "perc", "bca"))
 
 # Exercise 11.3
 
+Use metropolis-hastings sampler to generate random variables from a standard
+Cauchyy distribution. Discard the first 1000 of the chain, and compare the 
+deciles of the generated observations with the deciles of the standard Cauchy
+distribution. Recall that a $\text{Cauchy}(\theta, \eta)$ has density
 
+\begin{equation}
+f(x) = \frac{1}{\theta \pi(1 + [(x - \eta)/\theta]^2)}, 
+  \quad -\infty < x < \infty, \quad \theta > 0.
+\end{equation}
+
+In R:
+
+```{r}
+# general 1d Gaussian proposal random walk MH
+oneD.RWMH <- function(lprob,
+                     sigma=1.0,
+                     theta1=0.0,
+                     n.iter=10000){
+  # space for output
+  output <- numeric(n.iter)
+  # first iterate given
+  output[1] <- theta1
+  # Calculate probability of theta 1
+  lp.old <- lprob(theta1)
+  # main iteration loop
+  for(t in 2:n.iter){
+    # proposal
+    thetaStar <- output[t-1] + rnorm(1,sd=sigma)
+    # accept probability, for numerical stability we compute
+    lp.star <- lprob(thetaStar)
+    # the log-accept prob, and then take exp
+    alpha <- exp(min(0.0,lp.star-lp.old))
+    # accept/reject step
+    if(runif(1)<alpha && is.finite(alpha)){
+      output[t] <- thetaStar
+    } else {
+      output[t] <- output[t-1]
+    }
+  }
+print(paste0("RWMH done, accept prob : ",mean(abs(diff(output))>1.0e-14)))
+  return(output[1000:length(output)])
+} 
+
+
+std_cauchy <- function(x){return(dcauchy(x, 0, 1, log=TRUE))}
+
+# try algorithm (change initial condition and sigma for illustration)
+out <- oneD.RWMH(std_cauchy, theta1 = 0, sigma=2)
+par(mfrow=c(2,1))
+plot(1:length(out),out,pch=20,cex=0.1,xlab="MCMC iteration #")
+hist(out)
+```
+
+This implementation uses standard normal proposals. We can see from the plot that the random walk stops suddenly on values
+far from the center of teh distribution and skews the samples. Let's perform some diagnostics:
+
+```{r}
+#
+# convergence tests 
+#
+library(coda)
+#
+# Geweke (single chain test)
+#
+# make an mcmc object used by the coda package
+chain.mcmc <- mcmc(data=out)
+varnames(chain.mcmc) <- "theta"
+# returns z-score (to be compared two-sided with standard normal)
+geweke.diag(chain.mcmc)
+# check if we should discard more burn-in
+geweke.plot(chain.mcmc) 
+
+```
 \newpage
 
 # Bibliography
