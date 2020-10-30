@@ -69,7 +69,7 @@ meantimeest <- function(data, i) {
 }
 
 # bootstrapping with 1000 replications
-results <- boot(data=aircondit$hours, statistic = meantimeest, R=1000)
+results <- boot(data=aircondit$hours, statistic = meantimeest, R=5000)
 
 # view results
 results
@@ -81,7 +81,7 @@ boot.ci(results, type=c("norm", "basic", "perc", "bca"))
 
 # Exercise 11.3
 
-Use metropolis-hastings sampler to generate random variables from a standard
+Use MALA sampler to generate random variables from a standard
 Cauchyy distribution. Discard the first 1000 of the chain, and compare the 
 deciles of the generated observations with the deciles of the standard Cauchy
 distribution. Recall that a $\text{Cauchy}(\theta, \eta)$ has density
@@ -94,65 +94,109 @@ f(x) = \frac{1}{\theta \pi(1 + [(x - \eta)/\theta]^2)},
 In R:
 
 ```{r}
-# general 1d Gaussian proposal random walk MH
-oneD.RWMH <- function(lprob,
-                     sigma=1.0,
-                     theta1=0.0,
+# 1-d MALA method from the lectures
+
+oneDMALA <- function(lp_grad, 
+                     theta1 = 0.0,
+                     Delta = 0.5,
                      n.iter=10000){
-  # space for output
-  output <- numeric(n.iter)
-  # first iterate given
-  output[1] <- theta1
-  # Calculate probability of theta 1
-  lp.old <- lprob(theta1)
-  # main iteration loop
-  for(t in 2:n.iter){
+  
+  # storage
+  out <- numeric(n.iter)
+  out[1] <- theta1
+  old.lpg <- lp_grad(theta1)
+  
+  Nacc <- 0
+  
+  for( i in 2:n.iter){
     # proposal
-    thetaStar <- output[t-1] + rnorm(1,sd=sigma)
-    # accept probability, for numerical stability we compute
-    lp.star <- lprob(thetaStar)
-    # the log-accept prob, and then take exp
-    alpha <- exp(min(0.0,lp.star-lp.old))
-    # accept/reject step
+    thetaStar <- out[i-1] + 0.5*Delta*old.lpg$grad +
+      sqrt(Delta)*rnorm(1)
+    # new eval at proposal
+    new.lpg <- lp_grad(thetaStar)
+    
+    # proposal density forward
+    lqf <- dnorm(thetaStar,mean = out[i-1] + 0.5*Delta*old.lpg$grad,
+                 sd = sqrt(Delta),log=TRUE)
+    # proposal density backward
+    lqb <- dnorm(out[i-1],mean = thetaStar + 0.5*Delta*new.lpg$grad,
+                 sd = sqrt(Delta),log=TRUE)
+    
+    # accept probability
+    alpha <- exp(min(0.0,
+                     new.lpg$lp + lqb # numerator
+                     -old.lpg$lp - lqf # denominator
+    ))
+    
     if(runif(1)<alpha && is.finite(alpha)){
-      output[t] <- thetaStar
+      out[i] <- thetaStar
+      old.lpg <- new.lpg
+      Nacc <- Nacc + 1
     } else {
-      output[t] <- output[t-1]
+      out[i] <- out[i-1]
     }
-  }
-print(paste0("RWMH done, accept prob : ",mean(abs(diff(output))>1.0e-14)))
-  return(output[1000:length(output)])
-} 
+    
+  } # main iteration loop
+  print(paste0("MALA done, accept rate :",Nacc/(n.iter-1)))
+  return(out)
+} # function
 
 
-std_cauchy <- function(x){return(dcauchy(x, 0, 1, log=TRUE))}
+# target function
+lpg <- function(x){
+  return(list(lp=-log(1.0+x^2), #no need for normalizing constant 
+              grad=-2.0*x/(1.0+x^2)))
+}
 
 # try algorithm (change initial condition and sigma for illustration)
-out <- oneD.RWMH(std_cauchy, theta1 = 0, sigma=2)
-par(mfrow=c(2,1))
-plot(1:length(out),out,pch=20,cex=0.1,xlab="MCMC iteration #")
-hist(out)
+mala.out <- oneDMALA(lp_grad=lpg,theta1=rcauchy(1),Delta=4.0,n.iter = 100000)
+# Histogram
+hist(mala.out)
+# plot mcmc quantiles against theoretical deciles
+par(mfrow=c(1,1))
+probs <- 0.01*(11:89)
+plot(qcauchy(probs),quantile(mala.out,probs))
+abline(0,1)
+# looks quite good, note, tails very difficult to get properly represented
 ```
 
 This implementation uses standard normal proposals. We can see from the plot that the random walk stops suddenly on values
 far from the center of the distribution and skews the samples. Let's perform some diagnostics:
 
 ```{r}
-#
-# convergence tests 
-#
-library(coda)
-#
-ESS <- function(x){ return(as.numeric(coda::effectiveSize(x))) }
-ESS(out)
-ESS(out)/length(out)
+###--- Problem 11.3 (Rizzo)
+library(coda) # mcmc utilites
+# now run a few more chains to be able to run proper tests
+
+mcmc1 <- mcmc(mala.out)
+varnames(mcmc1)<- 'x'
+mala.out <- oneDMALA(lp_grad=lpg,theta1=rcauchy(1),Delta=4.0,n.iter = 100000)
+mcmc2 <- mcmc(mala.out)
+varnames(mcmc2)<- 'x'
+mala.out <- oneDMALA(lp_grad=lpg,theta1=rcauchy(1),Delta=4.0,n.iter = 100000)
+mcmc3 <- mcmc(mala.out)
+varnames(mcmc3)<- 'x'
+mala.out <- oneDMALA(lp_grad=lpg,theta1=rcauchy(1),Delta=4.0,n.iter = 100000)
+mcmc4 <- mcmc(mala.out)
+varnames(mcmc4)<- 'x'
+
+ml <- mcmc.list(mcmc1,mcmc2,mcmc3,mcmc4)
+
+effectiveSize(ml)
+# not super-good due to the heavy tails 
+traceplot(ml)
+# look at trace plot
+geweke.diag(ml)
+# borderline OK
+gelman.diag(ml)
+# borderline OK
 ```
 
 ```{r}
 # Geweke (single chain test)
 #
 # make an mcmc object used by the coda package
-chain.mcmc <- mcmc(data=out)
+chain.mcmc <- mcmc(data=mala.out)
 varnames(chain.mcmc) <- "theta"
 # returns z-score (to be compared two-sided with standard normal)
 geweke.diag(chain.mcmc)
@@ -171,7 +215,7 @@ rates of each chain.
 ```{r}
 # general 1d Gaussian proposal random walk MH
 oneD.RWMH <- function(prob,
-                     sigma=1.0,
+                     sigma=1.3,
                      theta1=0.0,
                      n.iter=10000){
   # space for output
@@ -213,6 +257,25 @@ Let's perform some diagnostics
 ESS <- function(x){ return(as.numeric(coda::effectiveSize(x))) }
 ESS(out)
 ESS(out)/length(out)
+
+# run more chains for diagnostics
+
+mcmc1 <- mcmc(oneD.RWMH(laplace))
+mcmc2 <- mcmc(oneD.RWMH(laplace))
+mcmc3 <- mcmc(oneD.RWMH(laplace))
+mcmc4 <- mcmc(oneD.RWMH(laplace))
+
+ml <- mcmc.list(mcmc1,mcmc2,mcmc3,mcmc4)
+
+effectiveSize(ml)
+# quite OK
+traceplot(ml)
+# look at trace plot
+geweke.diag(ml)
+# OK
+gelman.diag(ml)
+# OK
+
 ```
 
 ```{r}
@@ -232,5 +295,157 @@ geweke.diag(chain.mcmc)
 geweke.plot(chain.mcmc) 
 ```
 
+# Problem 1
 
-# Bibliography
+In this problem we consider a simple special case of a generalized linear model,
+where the observations $y_i$, $i = 1, \dots, n$ are modeled as
+
+\begin{equation}
+y_i \sim \text{Exponential}(\text{Exp}(\alpha + \beta x_i)), 
+  \quad i = 1, \dots, n
+\end{equation}
+
+Where $x_i$, $i = 1, \dots, n$ is a fixed covariate (e.g y_i is the price of an
+apartment, and x_i is size (measured in square-meters) of the apartment). 
+Notice in particular that we use the scale parametrization of the exponential
+distribution, so $E(y_i) = \text{exp}(\alpha + \beta x_i)$. The parameters
+$\alpha$ and $\beta$ may take any values, and we let the parameter vector 
+$\boldsymbol{\theta}$ be defined as $\boldsymbol\theta = (\alpha, \beta)$
+
+In this problem, we are going to perform a Bayesian analysis of the data set
+under this model. We assume the priors $\alpha \sim N(0, 10^2)$ and
+$\beta \sim N(0, 10^2)$
+
+Simulate data in R
+
+```{r}
+################################################################
+###--- Problem 1
+
+# from exercise set
+# simulate data
+set.seed(123)
+n <- 100
+x <- runif(n,min=-1)
+y <- rexp(n,rate=1.0/exp(0.4+0.5*x))
+
+# log-target distribution (theta=(alpha,beta))
+lp <- function(theta){
+  alpha <- theta[1]
+  beta <- theta[2]
+  log.like <- sum(dexp(y,rate=1.0/exp(alpha+beta*x),log=TRUE))
+  log.prior <- dnorm(alpha,sd=10.0,log=TRUE) + dnorm(beta,sd=10.0,log=TRUE)
+  return(log.like+log.prior)
+}
+# end from exercise set
+
+
+#
+#  point 1,a)
+#
+
+# bivariate RWMH method (from exercise set 7)
+twoDRWMH <- function(lprob, # log-probability density kernel
+                     Sigma=diag(2), # default proposal covariance = identity matrix
+                     theta1=c(0.0,0.0), # default initial configuration
+                     n.iter=10000){
+  # allocate output space
+  out <- matrix(0.0,n.iter,2)
+  out[1,] <- theta1
+  
+  # store old lprob
+  lp.old <- lprob(theta1)
+  
+  # cholesky factorization of Sigma for fast sampling
+  L <- t(chol(Sigma)) #lower triangular factor
+  
+  # accept counter
+  Nacc <- 0
+  # main iteration loop
+  for(i in 2:n.iter){
+    # proposal
+    thetaStar <- out[(i-1),] + L%*%rnorm(2)
+    
+    # evaluate
+    lp.star <- lprob(thetaStar)
+    
+    # accept prob
+    alpha <- exp(min(0.0,lp.star-lp.old))
+    
+    # accept/reject
+    if(runif(1)<alpha && is.finite(alpha)){
+      # accept
+      out[i,] <- thetaStar
+      lp.old <- lp.star
+      Nacc <- Nacc+1
+    } else {
+      out[i,] <- out[(i-1),]      
+    }
+  } # main iteration loop
+  
+  print(paste0("RWMH done, accept rate : ",Nacc/(n.iter-1)))
+  return(out)
+} # function
+
+# initial run to get a reasonable estimate of the covariance
+sim <- twoDRWMH(lprob = lp)
+init.theta <- colMeans(sim)
+init.cov <- cov(sim)
+
+# main run 
+#
+sim <- twoDRWMH(lprob = lp,Sigma = 4.0*init.cov, theta1=init.theta)
+colnames(sim) <- c("alpha","beta")
+mcmc1 <- mcmc(sim)
+```
+b. Let's check our samples
+
+```{r}
+#
+# point 1.b)
+#
+
+# check trace plots
+par(mfrow=c(2,1))
+traceplot(mcmc1)
+# removing burn in does not seem neccessary, as we already started
+# the last MCMC run close to the posterior mean
+
+# check diagnostics and ESS
+effectiveSize(mcmc1)
+geweke.diag(mcmc1)
+# all look OK, with ESS>1000
+```
+c. Let's predict $y*$.
+By sampling from the posterior distribution 
+$p(\boldsymbol{\theta}|\boldsymbol{y})$ and transforming it to 
+$\exp(\alpha_t + \beta_t\cdot 0.5)$. 
+
+This is also called the predictive distribution $E(y* | x, \boldsymbol{y})$
+
+```{r}
+#
+# 1.c)
+#
+
+# predictive mean distribution
+Eystar <- exp(mcmc1[,1]+0.5*mcmc1[,2])
+par(mfrow=c(1,1))
+hist(Eystar)
+mean(Eystar)
+sd(Eystar)
+```
+d.) Calculate the predictive distribution of $y* | x, \boldsymbol{y}$
+
+```{r}
+#
+# 1.d)
+#
+# predictive distribution of new observation
+ystar <- Eystar*rexp(length(Eystar))
+hist(ystar)
+mean(ystar)
+sd(ystar)
+# sought probability
+mean(ystar>5.0)
+```
