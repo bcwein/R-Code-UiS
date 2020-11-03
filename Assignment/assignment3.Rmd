@@ -182,6 +182,160 @@ importance(100000)
 integrate(g, 0, Inf)$value
 ```
 
+# Problem 2. Smile shaped target
+
+In this exercise, we shall sample from the distribution
+
+$$
+\log g(\boldsymbol \theta) = -\frac{\theta_1^2}{2} - 
+\frac{(\theta_2 - \theta_1^2)^2}{2}, \qquad \infty < x < \infty
+$$
+To do this, an 2D random walk with multivariate normal proposals as been
+implemented in R.
+
+In the code below, a 2D random walk with proposal
+
+$$
+N(\boldsymbol \theta, \Sigma)
+$$
+Where 
+
+$$
+\Sigma = 
+\begin{bmatrix}
+2, 0 \\
+0, 2
+\end{bmatrix}
+$$
+and
+$$
+\boldsymbol \theta = 
+\begin{pmatrix}
+0 \\
+0
+\end{pmatrix}
+$$
+Yielded the greatest effective sample size.
+
+In R:
+
+```{r}
+# Load the multivariate normal library 
+library(mvtnorm)
+library(coda)
+
+# Target function from 
+logg <- function(theta) {
+  return(-theta[1]^2/2 - (theta[2] - theta[1]^2)^2 /2)
+}
+
+# 2D Random walk using log g
+smile_shaped <- function(logg,
+                         sigma=diag(2),
+                         theta=c(0.0, 0.0),
+                         Nsamp=100000){
+  
+  # Reserve 2xNsamp matrix with zeros
+  res <- matrix(0, Nsamp, 2)
+  
+  # Set initial conditions
+  res[1,] <- theta
+  
+  # Calculate old log-probability
+  logold <- logg(theta)
+  
+  # accept counter
+  Nacc <- 0
+  
+  # Iterate no of samples.
+  for(i in 2:Nsamp){
+    # Proposal step
+    new <- res[i-1,] + rmvnorm(1, theta, sigma)
+    # Log-p of proposal step
+    lognew <- logg(new)
+    # Evaluate step
+    logfrac <- exp(min(0.0,lognew-logold))
+    # Accept or reject new step
+    if(runif(1)<logfrac && is.finite(logfrac)){
+      # accept
+      res[i,] <- new
+      logold <- lognew
+      Nacc <- Nacc+1
+    } else {
+      # reject
+      res[i,] <- res[i-1,]
+    }
+  }
+  print(paste("Accept prob: ", Nacc/Nsamp))
+  return(res[5000:Nsamp,])
+}
+
+# Covariance matrix
+sigma <- matrix(c(2, 0, 0, 2), nrow=2, ncol=2)
+m <- smile_shaped(logg=logg, sigma=sigma, c(0.0, 0.0), 50000)
+```
+
+Let's plot the ``Smile shaped'' distribution:
+
+```{r}
+# Plot multivariate distribution
+plot(m)
+```
+
+Let's also see if the marginal distribution of $\theta_1$ is standard normal:
+
+```{r}
+# Plot marginal of theta1 and compare with standard normal
+hist(m[,1], probability=TRUE)
+curve(dnorm(x, mean=0, sd=1), 
+      col="red", lwd=2, add=TRUE, yaxt="n")
+```
+
+To check if we have explored the distribution well, let's calculate the effective
+sample size of $theta_1$ and $theta_2$.
+
+```{r}
+ESS <- function(x) {
+  coda::effectiveSize(x)
+}
+
+ESS(m[,1])
+ESS(m[,2])
+```
+# Problem 3
+
+```{r}
+# Load the data set
+df <- data.frame(read.table("logistic_regression_data.txt"))
+x <- df$x
+y <- df$y
+
+# function returning a log-posterior kernel for theta
+logistic.lp <- function(theta) {
+  alpha <- theta[1]
+  beta <- theta[2]
+  # log-likelihood
+  Eeta <- exp(alpha + beta*x)
+  p <- Eeta/(1.0 + Eeta)
+  log.like <- sum(dbinom(y, size=1, prob = p, log=TRUE))
+  
+  # priors
+  log.prior <- dnorm(alpha, sd=10, log=TRUE) + dnorm(beta, sd=10, log=TRUE)
+  
+  # log-posterior kernel
+  return(log.like+log.prior)
+}
+```
+
+In this task, we will use independent metropolis-hastings sampling for the
+posterior distribution $p(\boldsymbol \theta | \boldsymbol y)$ using a 
+$N(\hat{\theta}, \delta \hat{\Sigma})$ proposal distribution.
+
+In R:
+
+```{r}
+
+```
 \newpage
 
 # Bibliography
