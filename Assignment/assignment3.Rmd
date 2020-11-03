@@ -302,7 +302,7 @@ ESS <- function(x) {
 ESS(m[,1])
 ESS(m[,2])
 ```
-# Problem 3
+# Problem 3 IMH for simple logistic regression problem
 
 ```{r}
 # Load the data set
@@ -334,8 +334,77 @@ $N(\hat{\theta}, \delta \hat{\Sigma})$ proposal distribution.
 In R:
 
 ```{r}
+# Independent sampler
+IndepMH <- function(prob, theta=c(0, 0), sigma=diag(2), Nsamp=1000, S=1){
+  # Allocate space
+  res <- matrix(0, Nsamp, 2)
+  # Set initial values
+  res[1,] <- theta
+  # Old importance
+  pold <- prob(theta)/dmvnorm(theta, mean=theta ,sigma=sigma)
+  # No of accept
+  Nacc <- 0
+  for (i in 2:Nsamp){
+    # Sample theta from multivariate normal with scaled sigma
+    new <- rmvnorm(1, theta, S*sigma)
+    # Importance of new theta
+    pnew <- prob(new)/dmvnorm(new, mean=theta, sigma=sigma)
+    frac <- min(1.0, pnew/pold)
+    if(runif(1)<frac && is.finite(frac)){
+      # Accept
+      res[i,] <- new
+      pold <- pnew
+      Nacc <- Nacc+1
+    } else {
+      # Reject
+      res[i,] <- res[(i-1),]
+    }
+  }
+  print(paste0("accept rate : ",Nacc/Nsamp))
+  return(res[1000:Nsamp,])
+}
+
+sigma <- matrix(c(0.00653,-0.00058,-0.00058,0.01689),2,2)
+
+m <- IndepMH(logistic.lp, c(-0.102, 1.993), sigma, 30000, 0.6)
+plot(m)
+```
+
+Calculate ESS
+
+```{r}
+ESS(m[,1])
+ESS(m[,2])
+```
+
+b) 
+
+```{r}
+plotdist <- function (x) {
+  mstar <- m[,1] + m[,2]*x
+  med <- median(mstar)
+  quant05 <- quantile(mstar, 0.05)
+  quant95 <- quantile(mstar, 0.95)
+  return(c(med, quant05, quant95))
+}
+
+x <- seq(-5, 5, 0.01)
+plotmat <- matrix(0, length(x), 3)
+i <- 0
+for (val in x) {
+  i <- i+1
+  plotmat[i,] <- plotdist(val)
+}
+
+plot(x, plotmat[, 1], type="l", col="red")
+lines(x, plotmat[, 2], type="l", col="blue", lty=2)
+lines(x, plotmat[, 3], type="l", col="orange", lty=3)
+legend("topleft", legend=c("Median", "05 quantile", "95 quantile"),
+       col=c("red", "blue", "orange"), lty=1:3, cex=0.8)
+
 
 ```
+
 \newpage
 
 # Bibliography
