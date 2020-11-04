@@ -507,12 +507,12 @@ $$
 And we have
 
 $$
-b_\alpha = \tau\sum_{i=1}^n(\beta x_i - y_i)
+b_\alpha = -\tau\sum_{i=1}^n(\beta x_i - y_i)
 $$
 and
 
 $$
-c_\alpha = \left(\frac{\tau n}{2} + 
+c_\alpha = -\left(\frac{\tau n}{2} + 
 \frac{1}{200}\right)
 $$
 
@@ -559,7 +559,7 @@ and
 
 $$
 c_\beta = 
-\left(\frac{\tau}{2}\sum_{i=1}^n x_i + \frac{1}{200}\right)
+-\left(\frac{\tau}{2}\sum_{i=1}^n x_i + \frac{1}{200}\right)
 $$
 
 and the posterior (from the lecture notes) is
@@ -568,6 +568,48 @@ $$
 \pi(\beta | \alpha, \tau, \boldsymbol{y}) \sim
 N\left( -\frac{b_\beta}{2c_\beta},  -\frac{1}{2c_\beta} \right)
 $$
+
+## b) Gibbs sampler with three blocks
+
+Load the data
+
+```{r}
+# Load regression data
+df <- data.frame(read.table(file="linear_regression_data.txt"))
+x <- df$x
+y <- df$y
+``` 
+
+Let's implement the gibbs sampler
+
+```{r}
+gibbs <- function(x, y, theta=c(1.0, 1.0, 1.0), Nsamp=10000) {
+  res <- matrix(0.0, Nsamp, 3)
+  res[1, ] <- theta
+  gammashape <- length(x)/2 + 1
+  
+  for(i in 1:Nsamp){
+    # Block 1. Tau.
+    gammascale <- 0.5*(sum(x) - length(x)*res[i, 2] - sum(res[i, 3]*x))^2 + 1
+    res[i, 1] <- rgamma(1, gammashape, gammascale)
+    
+    # Block 2. Alpha.
+    balpha <- -res[i, 1]*sum(res[i, 1]*x - y)
+    calpha <- -(res[i, 1]*length(x))/2 + (1/200)
+    res[i, 2] <- rnorm(1, -(balpha/(2*calpha)), -(1/(2*calpha)))
+    
+        
+    # Block 2. Beta
+    bbeta <- -res[i, 1]*(res[i, 2]*sum(x) + sum(x*y))
+    cbeta <- -((res[i, 1]/2)*sum(x) + 1/200)
+    res[i, 3] <- rnorm(1, -(bbeta/(2*cbeta)), -(1/(2*cbeta)))
+  }
+  return(res)
+}
+
+m <- gibbs(x, y)
+colMeans(m)
+```
 
 \newpage
 
