@@ -377,33 +377,78 @@ ESS(m[,1])
 ESS(m[,2])
 ```
 
-b) 
+b/c) Plot quantiles of data and find $x*$ such that $P(m(x*) > 0.8) = 0.99$
+
+To  solve this problem, we calculate $m(x*)$ the median and quantiles for
+$x \in [-5, 5]$ where $\alpha$ and $\beta$ has been estimated based on the
+dataset provided in the mandatory assignment.
+
+We use the following algorithm to solve this problem:
+
+1. Given data, estimate $\alpha$, $\beta$ using independent metropolis hastings
+2. Select sequence of $x*$ we want to explore
+3. Iterate through each value of $x*$
+4. Calculate median and 01th, 05th and 95th quantiles and return these as a vector
+5. Store vector as row in matrix
+6. Repeat steps 4-5 for each value in $x*$
+
+When this algorithm terminates, we have a 2D matrix of medians and quantiles for
+all $x*$. We use this for plotting and finding the $x*$ where 
+$P(m(x*) > 0.8) = 0.99$
+
+In R:
 
 ```{r}
+# Plotdist is function for calculating values for plotting
 plotdist <- function (x) {
-  mstar <- m[,1] + m[,2]*x
+  # Calculate m(x*)
+  mstar <- exp(m[,1] + m[,2]*x) / (1 + exp(m[,1] + m[,2]*x))
+  # calulcate median given x*
   med <- median(mstar)
+  # Caltulate quantiles given x*
   quant05 <- quantile(mstar, 0.05)
   quant95 <- quantile(mstar, 0.95)
-  return(c(med, quant05, quant95))
+  quant01 <- quantile(mstar, 0.01)
+  # return vector of calculations
+  return(c(med, quant05, quant95, quant01))
 }
 
+# sequence of x* values
 x <- seq(-5, 5, 0.01)
-plotmat <- matrix(0, length(x), 3)
+# plot 
+plotmat <- matrix(0, length(x), 4)
+# set index
 i <- 0
+# Loop through all x* values in sequence
 for (val in x) {
+  # increment index for each value in xÆ
   i <- i+1
   plotmat[i,] <- plotdist(val)
 }
 
-plot(x, plotmat[, 1], type="l", col="red")
+# First value larger than 0.8 (for plotting horizontal)
+horizontal <- plotmat[, 4][plotmat[, 4] > 0.8][1]
+
+# First x-value of m-value with 99% probability of being larger than 0.8
+vertical <- x[Position(function(x) x > 0.8, plotmat[, 4])]
+
+# Plot all medians and quantiles conditional on x*
+plot(x, plotmat[, 1], type="l", col="red", ylab="M*")
 lines(x, plotmat[, 2], type="l", col="blue", lty=2)
 lines(x, plotmat[, 3], type="l", col="orange", lty=3)
-legend("topleft", legend=c("Median", "05 quantile", "95 quantile"),
-       col=c("red", "blue", "orange"), lty=1:3, cex=0.8)
+lines(x, plotmat[, 4], type="l", col="green", lty=4)
+# Add vertical line for x values
+abline(v = vertical, col="black")
+# add horizontal line for m values
+abline(h = horizontal, col="black")
+legend("topleft", legend=c("Median", "05 quantile", "95 quantile", "01 quantile"),
+       col=c("red", "blue", "orange", "green"), lty=1:4, cex=0.8)
 
-
+# X* where P(M(X*) > 0.8) = 0.99 
+print(vertical)
 ```
+
+
 
 \newpage
 
