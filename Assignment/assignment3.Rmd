@@ -17,7 +17,7 @@ Clear R environment
 rm(list = ls())
 ```
 
-# Problem 1 Random number generation and Monte Carlo integration.
+# Problem 1. Random number generation and Monte Carlo integration.
 
 ## a) 
 
@@ -39,7 +39,7 @@ time step, you have a pretty good estimate of what the value of the next one is.
 In short, the adjacent samples are autocorrelated.
 
 Because of this and the task specifically asking for independent samples.
-A regular random wolk metropolis-hastings approach is not feasible, we then turn
+A regular random walk metropolis-hastings approach is not feasible, we then turn
 to the independent metropolis-hastings approach:
 
 In R:
@@ -52,7 +52,7 @@ oneD.IRWMH <- function(prob,
                        Nsamp=10000){
   res <- numeric(Nsamp)
   # allocate memory
-  res[1] <- 0.0
+  res[1] <- theta1
   # old importance weight
   wt.old <- prob(res[1])/dnorm(res[1], sd=sigma)
   Nacc <- 0
@@ -313,7 +313,7 @@ ESS <- function(x) {
 ESS(m[,1])
 ESS(m[,2])
 ```
-# Problem 3 IMH for simple logistic regression problem
+# Problem 3. IMH for simple logistic regression problem
 
 ```{r}
 # Load the data set
@@ -348,21 +348,21 @@ In R:
 
 ```{r}
 # Independent sampler
-IndepMH <- function(prob, theta=c(0, 0), sigma=diag(2), Nsamp=1000, S=1){
+IndepMH <- function(lprob, theta=c(0, 0), sigma=diag(2), Nsamp=1000, S=1){
   # Allocate space
   res <- matrix(0, Nsamp, 2)
   # Set initial values
   res[1,] <- theta
   # Old importance
-  pold <- prob(theta)/dmvnorm(theta, mean=theta ,sigma=sigma)
+  pold <- lprob(theta) - dmvnorm(theta, mean=theta ,sigma=sigma, log=TRUE)
   # No of accept
   Nacc <- 0
   for (i in 2:Nsamp){
     # Sample theta from multivariate normal with scaled sigma
     new <- rmvnorm(1, theta, S*sigma)
     # Importance of new theta
-    pnew <- prob(new)/dmvnorm(new, mean=theta, sigma=sigma)
-    frac <- min(1.0, pnew/pold)
+    pnew <- lprob(new) - dmvnorm(new, mean=theta, sigma=sigma, log=TRUE)
+    frac <- exp(min(0.0, pnew-pold))
     if(runif(1)<frac && is.finite(frac)){
       # Accept
       res[i,] <- new
@@ -461,10 +461,94 @@ legend("topleft", legend=c("Median", "05 quantile", "95 quantile", "01 quantile"
 print(vertical)
 ```
 
-# Problem 4 ``Gibbs sampler for simple linear regression model'' 
+# Problem 4. Gibbs sampler for simple linear regression model
 
+## a) Find conditional posteriors.
 
+The posterior for $\tau$ is given as
 
+$$
+\pi(\tau | \alpha, \beta, \boldsymbol{y}) \sim
+\text{gamma}\left(\frac{n}{2} + 1, \frac{1}{\frac{1}{2}\sum_{i=1}^n
+(y_i -\alpha - \beta x_i)^2 + 1
+}\right)
+$$
+
+To calculate the posterior of $\alpha$ we see by inspection that the log-density
+kernel is possibly on the form 
+$\log \pi(\alpha | \beta, \tau, \boldsymbol{y}) = a + b\alpha + c\alpha^2$ which 
+tells us the distribution is normal and that the constant $a$ is unimportant.
+
+Let's calculate $\log \pi(\alpha | \beta, \tau, \boldsymbol y)$.
+
+From the log-density kernel in the assignment description, we get
+
+$$
+\log \pi(\alpha | \beta, \tau, \boldsymbol{y}) =
+c'_\alpha - \frac{\tau}{2}\sum_{i=1}^n (y_i - \alpha - \beta x_i)^2 - 
+\frac{\alpha^2}{200}.
+$$
+Where $c'_\alpha$ is a unimportant constant containing all values not dependent 
+on $\alpha$. By squaring the term in the sum and adding unimportant values to
+$c'_\alpha$ we now get.
+
+$$
+\log \pi(\alpha | \beta, \tau, \boldsymbol{y}) =
+c'_\alpha - \frac{\tau}{2}(n \alpha^2 + \alpha \sum_{i=1}^n(2\beta x_i - 2y_i)) - 
+\frac{\alpha^2}{200}
+$$
+By multiplying the $\tau$ term and reshuffling we get
+
+$$
+\log \pi(\alpha | \beta, \tau, \boldsymbol{y}) =
+c_\alpha - \tau\sum_{i=1}^n(\beta x_i - y_i)\alpha -\left(\frac{\tau n}{2} + 
+\frac{1}{200}\right)\alpha^2
+$$
+And we have
+
+$$
+b_\alpha = \tau\sum_{i=1}^n(\beta x_i - y_i)
+$$
+and
+
+$$
+c_\alpha = \left(\frac{\tau n}{2} + 
+\frac{1}{200}\right)
+$$
+
+and the posterior (from the lecture notes) is
+
+$$
+\pi(\alpha | \beta, \tau, \boldsymbol{y}) \sim
+N\left( -\frac{b_\alpha}{2c_\alpha},  -\frac{1}{2c_\alpha} \right)
+$$
+
+And we do the same for $\pi(\beta | \alpha, \tau, \boldsymbol{y})$
+
+From the log-density kernel in the assignment description, we get
+
+$$
+\log \pi(\beta | \alpha, \tau, \boldsymbol{y}) =
+c'_\beta - \frac{\tau}{2}\sum_{i=1}^n (y_i - \alpha - \beta x_i)^2 - 
+\frac{\beta^2}{200}.
+$$
+Where $c'_\beta$ is a unimportant constant containing all values not dependent 
+on $\beta$. By squaring the term in the sum and adding unimportant values to 
+$c'_\beta$ we now get.
+
+$$
+\log \pi(\beta | \alpha, \tau, \boldsymbol{y}) =
+c'_\beta - \frac{\tau}{2}\sum_{i=1 }^n \left(\beta^2 x_i^2 + 
+2\alpha\beta x_i - 2\beta x_i y_i
+\right) - \frac{\beta^2}{200}
+$$
+By multiplying the $\tau$ term and reshuffling we get
+
+$$
+\log \pi(\beta | \alpha, \tau, \boldsymbol{y}) =
+c'_\beta - \tau\left(\sum_{i=1}^n \alpha x_i + \sum_{i=1}^n x_i y_i \right) -
+\left(\frac{\tau}{2}\sum_{i=1}^n x_i + \frac{1}{200}\right)\beta^2
+$$
 
 \newpage
 
