@@ -608,7 +608,6 @@ gibbs <- function(x, y, theta=c(1.0, 1.0, 1.0), Nsamp=10000) {
 }
 
 m <- gibbs(x, y)
-colMeans(m)
 ```
 
 \newpage
