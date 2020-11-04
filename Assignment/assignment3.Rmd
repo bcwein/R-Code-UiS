@@ -9,7 +9,7 @@ header-includes:
    - \usepackage[nodayofweek,level]{datetime}
 urlcolor: blue
 output: pdf_document
-bibliography: assignment2.bib
+bibliography: assignment3.bib
 ---
 
 Clear R environment
@@ -29,41 +29,50 @@ p(x) = \frac{2^{\frac{1}{4}}\Gamma \left( \frac{3}{4}\right)}{\pi} \exp
   \left( -\frac{x^4}{2} \right) , \qquad -\infty < x < \infty 
 $$
 
-For this, we can use random walk metropolis hasting. We import the function 
-from the lectures.
+One might wish to implement a regular Metropolis-Hastings random walk for
+sampling this distribution, but there is one major disadvantage for using this 
+approach: [@wiki:metropolisco]
+
+The samples are correlated, even though over the long term they do correctly 
+follow $p(x)$. This is due to the fact that given that you know the current
+time step, you have a pretty good estimate of what the value of the next one is.
+In short, the adjacent samples are autocorrelated.
+
+Because of this and the task specifically asking for independent samples.
+A regular random wolk metropolis-hastings approach is not feasible, we then turn
+to the independent metropolis-hastings approach:
+
+In R:
 
 ```{r}
-# general 1d Gaussian proposal random walk MH
-oneD.RWMH <- function(lprob, #notice log-density kernel!
-                     sigma=1.0,
-                     theta1=0.0,
-                     n.iter=10000){
-  # space for output
-  output <- numeric(n.iter)
-  # first iterate given
-  output[1] <- theta1
-  
-  # main iteration loop
-  for(t in 2:n.iter){
-    # proposal
-    thetaStar <- output[t-1] + rnorm(1,sd=sigma)
-    # accept probability, for numerical stability we compute
-    # the log-accept prob, and then take exp
-    alpha <- exp(min(0.0,lprob(thetaStar)-lprob(output[t-1])))
-    # accept/reject step
-    if(runif(1)<alpha && is.finite(alpha)){
-      output[t] <- thetaStar
-    } else {
-      output[t] <- output[t-1]
+# general 1d independence metropolis hastings
+oneD.IRWMH <- function(prob,
+                       sigma=1.0,
+                       theta1=0.0,
+                       Nsamp=10000){
+  res <- numeric(Nsamp)
+  # allocate memory
+  res[1] <- 0.0
+  # old importance weight
+  wt.old <- prob(res[1])/dnorm(res[1], sd=sigma)
+  Nacc <- 0
+    for(i in 2:Nsamp){
+      # proposal (note, independent of past)
+      thetaStar <- rnorm(1, sd=sigma)
+      # new importance weight
+      wt.star <- prob(thetaStar)/dnorm(thetaStar, sd=sigma)
+      # accept probability
+      alpha <- min(1.0, wt.star/wt.old)
+      # accept/reject
+      if(runif(1) < alpha){
+        res[i] <- thetaStar
+        wt.old <- wt.star
+        Nacc <- Nacc+1
+      } else {
+        res[i] <- res[i-1]
+      }
     }
-  }
-  return(output)
-} 
-
-# Logartihm of pdf (needed for metropolis hastings from slides)
-logpdf <- function(x){
-  c <- log((2^0.25 * gamma(3/4)) / pi)
-  return(c - x^4/2)
+  return(res)
 }
 
 # pdf from mandatory pdf
@@ -74,7 +83,7 @@ pdf <- function(x) {
 
 # sample n samples
 n <- 10000
-out <- oneD.RWMH(logpdf, theta1 = 0.0, sigma=1, n.iter = n)
+out <- oneD.IRWMH(pdf, theta1 = 0.0, sigma=1, Nsamp = n)
 
 # plot 
 par(mfrow=c(2,1))
@@ -135,7 +144,7 @@ hist(x, probability = TRUE)
 curve(pdf2, 0, 3, add = TRUE)
 ```
 
-# c) 
+## c) 
 
 Now we will consider the integral
 
@@ -183,6 +192,8 @@ integrate(g, 0, Inf)$value
 ```
 
 # Problem 2. Smile shaped target
+
+## a)
 
 In this exercise, we shall sample from the distribution
 
@@ -327,6 +338,8 @@ logistic.lp <- function(theta) {
 }
 ```
 
+## a) Sample $\alpha$ and $\beta$ using metropolis-hasting and bayesian inference
+
 In this task, we will use independent metropolis-hastings sampling for the
 posterior distribution $p(\boldsymbol \theta | \boldsymbol y)$ using a 
 $N(\hat{\theta}, \delta \hat{\Sigma})$ proposal distribution.
@@ -447,6 +460,9 @@ legend("topleft", legend=c("Median", "05 quantile", "95 quantile", "01 quantile"
 # X* where P(M(X*) > 0.8) = 0.99 
 print(vertical)
 ```
+
+# Problem 4 ``Gibbs sampler for simple linear regression model'' 
+
 
 
 
