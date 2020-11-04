@@ -379,7 +379,7 @@ IndepMH <- function(lprob, theta=c(0, 0), sigma=diag(2), Nsamp=1000, S=1){
 
 sigma <- matrix(c(0.00653,-0.00058,-0.00058,0.01689),2,2)
 
-m <- IndepMH(logistic.lp, c(-0.102, 1.993), sigma, 30000, 0.6)
+m <- IndepMH(logistic.lp, c(-0.102, 1.993), sigma, 10000, 0.6)
 plot(m)
 ```
 
@@ -548,6 +548,25 @@ $$
 \log \pi(\beta | \alpha, \tau, \boldsymbol{y}) =
 c'_\beta - \tau\left(\sum_{i=1}^n \alpha x_i + \sum_{i=1}^n x_i y_i \right) -
 \left(\frac{\tau}{2}\sum_{i=1}^n x_i + \frac{1}{200}\right)\beta^2
+$$
+And we have
+
+$$
+b_\beta = 
+-\tau\left(\sum_{i=1}^n \alpha x_i + \sum_{i=1}^n x_i y_i \right)
+$$
+and
+
+$$
+c_\beta = 
+\left(\frac{\tau}{2}\sum_{i=1}^n x_i + \frac{1}{200}\right)
+$$
+
+and the posterior (from the lecture notes) is
+
+$$
+\pi(\beta | \alpha, \tau, \boldsymbol{y}) \sim
+N\left( -\frac{b_\beta}{2c_\beta},  -\frac{1}{2c_\beta} \right)
 $$
 
 \newpage
