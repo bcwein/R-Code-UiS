@@ -91,15 +91,6 @@ plot(1:length(out),out,pch=20,cex=0.1,xlab="MCMC iteration #")
 hist(out, probability = TRUE)
 curve(pdf, add = TRUE, -2, 2)
 ```
-We choose this algorithms since it is difficult to integrate the pdf to find the
-cdf for inverse sampling, but the logarithm of the pdf is quite simple and 
-metropolis hastings random walk is quite effective in low dimensions and for 
-distributions that are difficult to sample directly.
-
-From the histogram where we plot the pdf we see that the sampling is quite
-effective. We also see from the plot that the random walk explores the 
-distribution space quite nicely.
-
 ## b) 
 
 Now let's sample from the distribution
@@ -538,28 +529,28 @@ $c'_\beta$ we now get.
 
 $$
 \log \pi(\beta | \alpha, \tau, \boldsymbol{y}) =
-c'_\beta - \frac{\tau}{2}\sum_{i=1 }^n \left(\beta^2 x_i^2 + 
-2\alpha\beta x_i - 2\beta x_i y_i
+c'_\beta - \frac{\tau}{2}\sum_{i=1 }^n \left(2\alpha\beta x_i + \beta^2 x_i^2 
+- 2\beta x_i y_i
 \right) - \frac{\beta^2}{200}
 $$
 By multiplying the $\tau$ term and reshuffling we get
 
 $$
 \log \pi(\beta | \alpha, \tau, \boldsymbol{y}) =
-c'_\beta - \tau\left(\sum_{i=1}^n \alpha x_i + \sum_{i=1}^n x_i y_i \right) -
-\left(\frac{\tau}{2}\sum_{i=1}^n x_i + \frac{1}{200}\right)\beta^2
+c'_\beta - \tau\left(\sum_{i=1}^n \alpha x_i - \sum_{i=1}^n x_i y_i \right)\beta 
+- \left(\tau\sum_{i=1}^n x_i^2 + \frac{1}{100}\right)\beta^2
 $$
 And we have
 
 $$
 b_\beta = 
--\tau\left(\sum_{i=1}^n \alpha x_i + \sum_{i=1}^n x_i y_i \right)
+- \tau\left(\sum_{i=1}^n \alpha x_i - \sum_{i=1}^n x_i y_i \right)
 $$
 and
 
 $$
 c_\beta = 
--\left(\frac{\tau}{2}\sum_{i=1}^n x_i + \frac{1}{200}\right)
+- \left(\tau\sum_{i=1}^n x_i^2 + \frac{1}{100}\right)
 $$
 
 and the posterior (from the lecture notes) is
@@ -583,31 +574,41 @@ y <- df$y
 Let's implement the gibbs sampler
 
 ```{r}
-gibbs <- function(x, y, theta=c(1.0, 1.0, 1.0), Nsamp=10000) {
-  res <- matrix(0.0, Nsamp, 3)
+gibbs <- function(x, y, theta=c(1.0, -1.2, 1.0), Nsamp=10000) {
+  res <- matrix(0.0, 3*Nsamp+1, 3)
   res[1, ] <- theta
   gammashape <- length(x)/2 + 1
+  k <- 2
   
   for(i in 1:Nsamp){
-    # Block 1. Tau.
-    gammascale <- 0.5*(sum(x) - length(x)*res[i, 2] - sum(res[i, 3]*x))^2 + 1
-    res[i, 1] <- rgamma(1, gammashape, gammascale)
-    
-    # Block 2. Alpha.
-    balpha <- -res[i, 1]*sum(res[i, 1]*x - y)
-    calpha <- -(res[i, 1]*length(x))/2 + (1/200)
-    res[i, 2] <- rnorm(1, -(balpha/(2*calpha)), -(1/(2*calpha)))
-    
-        
-    # Block 2. Beta
-    bbeta <- -res[i, 1]*(res[i, 2]*sum(x) + sum(x*y))
-    cbeta <- -((res[i, 1]/2)*sum(x) + 1/200)
-    res[i, 3] <- rnorm(1, -(bbeta/(2*cbeta)), -(1/(2*cbeta)))
-  }
-  return(res)
+      # Block 1. Alpha
+      balpha <- -theta[3]*sum(theta[2]*x - y)
+      calpha <- -theta[3]*length(y)*0.5 - 1/200
+      theta[1] <- rnorm(1, -balpha/(2*calpha), -1/(2*calpha))
+      # store state
+      res[k, ] <- theta
+      k <- k+1
+      
+      # Block 2. Beta
+      bbeta <- -theta[3]*(sum(x*theta[1]) - sum(x*y))
+      cbeta <- -theta[3]*0.5*sum(x^2) - 1/200
+      theta[2] <- rnorm(1, -bbeta/(2*cbeta), -1/(2*cbeta))
+      # store state
+      res[k, ] <- theta
+      k <- k+1
+      
+       # Block 3. Tau
+      gammascale <- 1/(0.5*sum((y - theta[1] - theta[2]*x)^2))
+      theta[3] <- rgamma(1, gammashape, scale = gammascale)
+      # store state
+      res[k, ] <- theta
+      k <- k+1
+}
+  return(res[500:Nsamp,])
 }
 
 m <- gibbs(x, y)
+colMeans(m)
 ```
 
 \newpage
