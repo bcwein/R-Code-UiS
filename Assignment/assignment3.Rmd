@@ -19,7 +19,7 @@ rm(list = ls())
 
 # Problem 1. Random number generation and Monte Carlo integration.
 
-## a) 
+## a) Generate $n$ independent samples from distribution
 
 In this problem the task is to sample $n$ independent samples from the
 probability distribution 
@@ -91,7 +91,7 @@ plot(1:length(out),out,pch=20,cex=0.1,xlab="MCMC iteration #")
 hist(out, probability = TRUE)
 curve(pdf, add = TRUE, -2, 2)
 ```
-## b) 
+## b) Generate $n$ independent samples from distribution
 
 Now let's sample from the distribution
 
@@ -135,7 +135,7 @@ hist(x, probability = TRUE)
 curve(pdf2, 0, 3, add = TRUE)
 ```
 
-## c) 
+## c) Evaluate integral using monte-carlo integration
 
 Now we will consider the integral
 
@@ -184,7 +184,7 @@ integrate(g, 0, Inf)$value
 
 # Problem 2. Smile shaped target
 
-## a)
+## a) Sampling using 2 random walk
 
 In this exercise, we shall sample from the distribution
 
@@ -620,7 +620,7 @@ colMeans(m)
 # Compre with one simple linear regression
 lm(y~x, data=df)
 ```
-## c)
+## c) Check if samples have converged
 
 Our means seem pretty good, let's plot trace plots of alpha and beta.
 
@@ -638,7 +638,7 @@ ESS(m[,3])
 We see that we have a pretty good sample size. Now let's investigate whether we
 can improve this by reducing the no of blocks and making blocks less dependent.
 
-## d)
+## d) Improve gibbs sampler
 
 Let's combine the blocks for $\alpha$ and $\beta$ from two normal distribution
 to one block of a multinormal distribution. With a posterior distribution
@@ -727,7 +727,7 @@ another.
 Fewer blocks and striving for independence among blocks will, according to the
 lectures, give better samples.
 
-## e)
+## e) Investigate whether $\alpha + \beta = 0$
 
 To do a simple ``hypothesis test'' using quantiles and our samples. for every
 sample, calculate $\alpha + \beta$ and store the values, calculate the 95% 
@@ -845,7 +845,56 @@ where $\lambda(t, \boldsymbol \theta)$ is taken to be the combined
 (SEIR-model implied) number of persons in the hospital states HH, HC and CC 
 (i.e. 1000000(HH +HC +CC)) for the days t we have data for.
 
+## a) Obtain MCMC samples targeting $p(\boldsymbol \theta | \boldsymbol y)$
 
+```{r}
+source("seir_mcmc_funs.R")
+
+twoD_RWMH_poisson <- function(lprob, # log-probability density kernel
+                     Sigma=diag(2), # default proposal covariance = identity matrix
+                     theta1=c(3.18,0.22), # default initial configuration
+                     n=1000){
+
+  # Cholesky factorization (used for effective sampling)
+  L = t(chol(Sigma))
+  
+  output <- matrix(0.0,n,2)
+  output[1,] <- theta1
+  # store old lprob
+  pastVal <- lprob(theta1)
+  # accept counter
+  Nacc <- 0
+  # main iteration loop
+  for(i in 2:n){
+    # proposal
+    thetaStar <- output[(i-1),] + L%*%rnorm(2)
+    currVal <- lprob(thetaStar)
+    # accept prob
+    alpha <- exp(min(0.0,currVal-pastVal))
+    # accept/reject
+    if(runif(1)<alpha && is.finite(alpha)){
+      # accept
+      output[i,] <- thetaStar
+      pastVal <- currVal
+      Nacc <- Nacc+1
+    } else {
+      output[i,] <- output[(i-1),]      
+    }
+  } # main iteration loop
+  
+   print(paste0("RWMH done, accept rate : ",Nacc/(n-1)))
+  return(round(output,5))
+  
+}
+
+# Tune model with mean vector from assignment 2
+m <- twoD_RWMH_poisson(seir.lp, theta1=c(3.18,0.22),
+                       Sigma=matrix(c(0.0003,0,0,0.0000005),2,2))
+```
+
+We chose the mean vector that we found in assignment 2 problem 4 c for tuning 
+the theta variable, the code and covariance matrix is borrowed from the tip
+in the assignment text.
 
 \newpage
 
