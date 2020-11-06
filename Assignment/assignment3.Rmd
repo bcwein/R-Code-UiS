@@ -273,7 +273,7 @@ smile_shaped <- function(logg,
 }
 
 # Covariance matrix
-sigma <- matrix(c(2, 0, 0, 2), nrow=2, ncol=2)
+sigma <- matrix(c(4.5, 0, 0, 4.5), nrow=2, ncol=2)
 m <- smile_shaped(logg=logg, sigma=sigma, c(0.0, 0.0), 50000)
 ```
 
@@ -610,7 +610,7 @@ gibbs <- function(x, y, theta=c(1.0, -1.2, 1.0), Nsamp=10000) {
       k <- k+1
   }
   # Return results minus burn in
-  return(res[500:Nsamp,])
+  return(res[500:k-1,])
 }
 
 # Get samples to matrix
@@ -635,7 +635,7 @@ ESS(m[,1])
 ESS(m[,2])
 ESS(m[,3])
 ```
-We see that we have a pretty good sample size. Now let's investigate wether we
+We see that we have a pretty good sample size. Now let's investigate whether we
 can improve this by reducing the no of blocks and making blocks less dependent.
 
 ## d)
@@ -703,7 +703,7 @@ gibbs_multi <- function(x, y, theta=c(1.0, -1.2, 1.0), Nsamp=10000) {
     k <- k+1
   }
   # Return results minus burn in
-  return(res[500:Nsamp,])
+  return(res[500:k-1,])
 }
 
 m2 <- gibbs_multi(x, y)
@@ -729,19 +729,34 @@ lectures, give better samples.
 
 ## e)
 
-To do a simple 
+To do a simple ``hypothesis test'' using quantiles and our samples. for every
+sample, calculate $\alpha + \beta$ and store the values, calculate the 95% 
+quantile confidence interval and plot the histogram with the interval.
+
+This could be done more appropriately by using a more analytical approach for
+our calculations but we resort to this simple case.
 
 ```{r}
 alphapbeta <- m[,1] + m[,2]
-hist(alphapbeta, breaks=25)
-quantile(alphapbeta, 0.95)
+hist(alphapbeta, breaks=25, 
+     main = "3-block gibbs sampler: alpha + beta distribution")
+abline(v = quantile(alphapbeta, 0.975), col="red", lwd="2")
+abline(v = quantile(alphapbeta, 1-0.975), col="red", lwd="2")
 ```
 
 ```{r}
 alphapbeta2 <- m2[,1] + m2[,2]
-hist(alphapbeta2, breaks=25)
-quantile(alphapbeta2, 0.95)
+hist(alphapbeta2, breaks=25,
+     main = "2-block gibbs sampler: alpha + beta distribution")
+abline(v = quantile(alphapbeta2, 0.975), col="red", lwd="2")
+abline(v = quantile(alphapbeta2, 1-0.975), col="red", lwd="2")
 ```
+
+In the first distribution, we accept (with a significance of 5%), that
+$\alpha + \beta \neq 0$. 
+
+In the second distribution, we fail to reject the null-hypothesis that  
+$\alpha + \beta = 0$. 
 
 # Problem 5
 
