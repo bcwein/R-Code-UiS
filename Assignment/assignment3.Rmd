@@ -575,12 +575,17 @@ Let's implement the gibbs sampler
 
 ```{r}
 gibbs <- function(x, y, theta=c(1.0, -1.2, 1.0), Nsamp=10000) {
+  # Result matrix (State stored thrice each iteration)
   res <- matrix(0.0, 3*Nsamp+1, 3)
+  # Set state 1 to initial values
   res[1, ] <- theta
+  # Set gamma shape parameter
   gammashape <- length(x)/2 + 1
+  # Set counter
   k <- 2
-  
+  # Iterate...
   for(i in 1:Nsamp){
+    
       # Block 1. Alpha
       balpha <- -theta[3]*sum(theta[2]*x - y)
       calpha <- -theta[3]*length(y)*0.5 - 1/200
@@ -603,13 +608,144 @@ gibbs <- function(x, y, theta=c(1.0, -1.2, 1.0), Nsamp=10000) {
       # store state
       res[k, ] <- theta
       k <- k+1
-}
+  }
+  # Return results minus burn in
   return(res[500:Nsamp,])
 }
 
+# Get samples to matrix
 m <- gibbs(x, y)
+# Calculate column means
 colMeans(m)
+# Compre with one simple linear regression
+lm(y~x, data=df)
 ```
+## c)
+
+Our means seem pretty good, let's plot trace plots of alpha and beta.
+
+```{r}
+# Traceplot alpha vs beta
+plot(m[,1], m[,2], type="l")
+```
+Also, let's calculate all the effective sample sizes for each variable
+
+```{r}
+ESS(m[,1])
+ESS(m[,2])
+ESS(m[,3])
+```
+We see that we have a pretty good sample size. Now let's investigate wether we
+can improve this by reducing the no of blocks and making blocks less dependent.
+
+## d)
+
+Let's combine the blocks for $\alpha$ and $\beta$ from two normal distribution
+to one block of a multinormal distribution. With a posterior distribution
+$\pi(\alpha, \beta | \tau, \boldsymbol y) \sim N(\boldsymbol \mu, \boldsymbol\Sigma)$ 
+
+where
+
+$$
+\boldsymbol\Sigma = -\boldsymbol c^{-1}
+$$
+and
+
+$$
+\boldsymbol \mu = -\boldsymbol c^{-1}\boldsymbol b
+$$
+and $\boldsymbol c$ and $\boldsymbol b$ is given in the assignment.
+
+Let's alter the function for gibbs sampling to have two blocks instead.
+
+```{r}
+gibbs_multi <- function(x, y, theta=c(1.0, -1.2, 1.0), Nsamp=10000) {
+  # Result matrix (State stored thrice each iteration)
+  res <- matrix(0.0, 2*Nsamp+1, 3)
+  # Set state 1 to initial values
+  res[1, ] <- theta
+  # Set gamma shape parameter
+  gammashape <- length(x)/2 + 1
+  # Set counter
+  k <- 2
+  
+  # Calculations that can be done once for improvment of performance
+  # Sum of x
+  sumx <- sum(x)
+  # Sum of x^2
+  sumx2 <- sum(x^2)
+  # Sum of y
+  sumy <- sum(y)
+  # Sum of xy
+  sumyx <- sum(x*y)
+  # No of datapoints
+  n <- length(x)
+  
+  # Iterate...
+  for(i in 1:Nsamp){
+    
+    # Block 1. [alpha, beta]
+    # C from assignment description
+    c <- matrix(c(-n*theta[3] - 0.01, -theta[3]*sumx,
+                  -theta[3]*sumx, -theta[3]*sumx2 - 0.01), nrow=2, ncol=2)
+    # b from assignment description
+    b <- c(theta[3]*sumy, theta[3]*sumyx)
+    
+    theta[1:2] <- rmvnorm(1, -solve(c)%*%b, -solve(c))
+    res[k, ] <- theta
+    k <- k+1
+    
+     # Block 2. Tau
+    gammascale <- 1/(0.5*sum((y - theta[1] - theta[2]*x)^2))
+    theta[3] <- rgamma(1, gammashape, scale = gammascale)
+    # store state
+    res[k, ] <- theta
+    k <- k+1
+  }
+  # Return results minus burn in
+  return(res[500:Nsamp,])
+}
+
+m2 <- gibbs_multi(x, y)
+colMeans(m2)
+plot(m2[,1], m2[,2], type = "l")
+```
+Now, is this gibbs sampler better than our first implementation? Let's check the
+effective sample size:
+
+```{r}
+ESS(m2[,1])
+ESS(m2[,2])
+ESS(m2[,3])
+```
+Which makes sense, we sampled $beta$ and $alpha$ with normal distributions
+dependent on the values of one another, in this case we sample both from a
+multinormal distribution according to the given covariance matrix 
+where each pair of samples are independent from one
+another.
+
+Fewer blocks and striving for independence among blocks will, according to the
+lectures, give better samples.
+
+## e)
+
+To do a simple 
+
+```{r}
+alphapbeta <- m[,1] + m[,2]
+hist(alphapbeta, breaks=25)
+quantile(alphapbeta, 0.95)
+```
+
+```{r}
+alphapbeta2 <- m2[,1] + m2[,2]
+hist(alphapbeta2, breaks=25)
+quantile(alphapbeta2, 0.95)
+```
+
+# Problem 5
+
+
 
 \newpage
 
