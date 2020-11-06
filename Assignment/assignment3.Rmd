@@ -538,7 +538,7 @@ By multiplying the $\tau$ term and reshuffling we get
 $$
 \log \pi(\beta | \alpha, \tau, \boldsymbol{y}) =
 c'_\beta - \tau\left(\sum_{i=1}^n \alpha x_i - \sum_{i=1}^n x_i y_i \right)\beta 
-- \left(\tau\sum_{i=1}^n x_i^2 + \frac{1}{100}\right)\beta^2
+- \left(\frac{\tau}{2} \sum_{i=1}^n x_i^2 + \frac{1}{200}\right)\beta^2
 $$
 And we have
 
@@ -550,7 +550,7 @@ and
 
 $$
 c_\beta = 
-- \left(\tau\sum_{i=1}^n x_i^2 + \frac{1}{100}\right)
+- \left(\frac{\tau}{2}\sum_{i=1}^n x_i^2 + \frac{1}{200}\right)
 $$
 
 and the posterior (from the lecture notes) is
@@ -829,6 +829,21 @@ also rejected, our 95% confidence interval does not include $\alpha = 0$. Claim
 3 holds in our since the confidence interval for $\alpha + \beta$ contains 0. 
 
 # Problem 6. Bayesian inference for the SEIR model.
+
+Let's once again take a look at the SEIR model. We are tasked with estimating
+the reproduction number $R$ and the social distancing factor $S$ based on the
+dataset ${y_t}_{i=1}^T$ of counts of the number of hospitalized persons (out
+of a population of 1 million) recorded  every day between 
+\formatdate{31}{03}{2020} and \formatdate{18}{07}{2020}.
+
+We model the data using independent Poisson distributions
+
+$$
+y_y \sim \text{Poisson}(\lambda(t, \boldsymbol \theta)), \qquad t = 1, \dots, N
+$$
+where $\lambda(t, \boldsymbol \theta)$ is taken to be the combined 
+(SEIR-model implied) number of persons in the hospital states HH, HC and CC 
+(i.e. 1000000(HH +HC +CC)) for the days t we have data for.
 
 
 
