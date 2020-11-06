@@ -758,7 +758,77 @@ $\alpha + \beta \neq 0$.
 In the second distribution, we fail to reject the null-hypothesis that  
 $\alpha + \beta = 0$. 
 
-# Problem 5
+# Problem 5. Simple linear regression analysis, bootstrap approach
+
+Now, let's address the same linear regression problem as problem 4 but instead
+of using bayesian inference, we consider a classical approach using 
+bootstrapping. 
+
+In our case, our statistic will be the simple linear regression on bootstrapped
+datasets such that we get $\alpha$ and $\beta$ pairs for each bootstrapped datasets
+and we can investigate their distribution.
+
+Let's implement this in R:
+
+```{r}
+# Import bootstrap library
+library(boot)
+
+# Our statistic (simple linear regression y ~ alpha + beta x)
+slr <- function(data,i) {
+  lm(data[i, 1]~data[i, 2],data = df)$coefficients
+}   
+
+# Run bootstrap on our data
+boot.obj <- boot(data = df, statistic = slr, R = 5000)
+
+# Traceplot bootstrap estimate to compare with our bayesian approach
+plot(boot.obj$t[,1], boot.obj$t[,2], main="Bootstrap traceplot", type="l")
+```
+
+We see that out bootstrapped joint distribution is very similar to the bayesian 
+joint distribution that we calculated in problem 4. 
+
+Now, let's go through each of the following cases
+
+1. $\sigma = 1/\sqrt{\tau}$ is strictly smaller than 1.0 
+2. $\alpha$ is equal to 0
+3. $\alpha + \beta$ is equal to 0
+
+```{r}
+# Set gamma shape parameter
+gammashape <- length(x)/2 + 1
+
+# Calculate sigma for every alpha-beta pair
+sigma <- 1/sqrt(
+  rgamma(5000, shape = gammashape,
+  scale = 1/(1/2 * sum((y - mean(boot.obj$t[,1]) - 
+                        mean(boot.obj$t[,2])*x)^2) + 1))
+)
+
+# Claim 1
+hist(sigma, breaks=25, main="Distribution of sigma")
+abline(v = 1, col="red", lwd="2")
+
+# Claim 2
+hist(boot.obj$t[,1], breaks=25, main="Distribution of alpha")
+abline(v = quantile(boot.obj$t[,1], 0.975), col="red", lwd="2")
+abline(v = quantile(boot.obj$t[,1], 1-0.975), col="red", lwd="2")
+
+# Claim 3
+hist(boot.obj$t[,1] + boot.obj$t[,2], breaks=25, 
+     main="Distribution of alpha + beta")
+abline(v = quantile(boot.obj$t[,1] + boot.obj$t[,2], 0.975), 
+       col="red", lwd="2")
+abline(v = quantile(boot.obj$t[,1] + boot.obj$t[,2], 1-0.975), 
+       col="red", lwd="2")
+```
+Using our quantile confidence intervals, we reject claim 1 as
+it is clear that $tau$ is greater than 1 on several occasions. claim 2 is
+also rejected, our 95% confidence interval does not include $\alpha = 0$. Claim 
+3 holds in our since the confidence interval for $\alpha + \beta$ contains 0. 
+
+# Problem 6. Bayesian inference for the SEIR model.
 
 
 
