@@ -91,6 +91,7 @@ plot(1:length(out),out,pch=20,cex=0.1,xlab="MCMC iteration #")
 hist(out, probability = TRUE)
 curve(pdf, add = TRUE, -2, 2)
 ```
+
 ## b) Generate $n$ independent samples from distribution
 
 Now let's sample from the distribution
@@ -131,8 +132,8 @@ pdf2 <- function(x) {
 }
 
 x <- inverse_sampling(10000)
-hist(x, probability = TRUE)
-curve(pdf2, 0, 3, add = TRUE)
+hist(x, breaks=40, probability = TRUE)
+curve(pdf2, col="blue", lwd=2, 0, 3, add = TRUE)
 ```
 
 ## c) Evaluate integral using monte-carlo integration
@@ -157,7 +158,8 @@ f <- function(x) {
 }
 
 x<-seq(1,10,0.01); y1=g(x); y2=f(x)
-plot(x, y1, type="l", pch=19, col="red", xlab="x", ylab="y")
+plot(x, y1, type="l", pch=19, col="red", xlab="X", ylab="P(X)",
+     main="Target vs Proposal")
 lines(x, y2, pch=18, col="blue", type="l", lty=2)
 legend(1, 95, legend=c("Line 1", "Line 2"),
        col=c("red", "blue"), lty=1:2, cex=0.8)
@@ -281,14 +283,15 @@ Let's plot the ``Smile shaped'' distribution:
 
 ```{r}
 # Plot multivariate distribution
-plot(m)
+plot(m, xlab="Theta 1", ylab="Theta 2", main="Scatter of joint pdf")
 ```
 
 Let's also see if the marginal distribution of $\theta_1$ is standard normal:
 
 ```{r}
 # Plot marginal of theta1 and compare with standard normal
-hist(m[,1], probability=TRUE)
+hist(m[,1], xlab="Theta 1", main="Marginal distribution of theta 1", 
+     probability=TRUE)
 curve(dnorm(x, mean=0, sd=1), 
       col="red", lwd=2, add=TRUE, yaxt="n")
 ```
@@ -371,7 +374,7 @@ IndepMH <- function(lprob, theta=c(0, 0), sigma=diag(2), Nsamp=1000, S=1){
 sigma <- matrix(c(0.00653,-0.00058,-0.00058,0.01689),2,2)
 
 m <- IndepMH(logistic.lp, c(-0.102, 1.993), sigma, 10000, 0.6)
-plot(m)
+plot(m, xlab = "Alpha", ylab="Beta", main="Joint probability, alpha & beta")
 ```
 
 Calculate ESS
@@ -381,7 +384,7 @@ ESS(m[,1])
 ESS(m[,2])
 ```
 
-b/c) Plot quantiles of data and find $x*$ such that $P(m(x*) > 0.8) = 0.99$
+## b/c) Plot quantiles of data and find $x*$ such that $P(m(x*) > 0.8) = 0.99$
 
 To  solve this problem, we calculate $m(x*)$ the median and quantiles for
 $x \in [-5, 5]$ where $\alpha$ and $\beta$ has been estimated based on the
@@ -626,7 +629,8 @@ Our means seem pretty good, let's plot trace plots of alpha and beta.
 
 ```{r}
 # Traceplot alpha vs beta
-plot(m[,1], m[,2], type="l")
+plot(m[,1], m[,2], type="l", xlab="Alpha", ylab="Beta",
+     main="Traceplot, 3 block gibbs sampler")
 ```
 Also, let's calculate all the effective sample sizes for each variable
 
@@ -708,7 +712,8 @@ gibbs_multi <- function(x, y, theta=c(1.0, -1.2, 1.0), Nsamp=10000) {
 
 m2 <- gibbs_multi(x, y)
 colMeans(m2)
-plot(m2[,1], m2[,2], type = "l")
+plot(m2[,1], m2[,2], type = "l", main="Traceplot, 2 block gibbs sampler",
+     xlab="Alpha", ylab="Beta")
 ```
 Now, is this gibbs sampler better than our first implementation? Let's check the
 effective sample size:
@@ -783,7 +788,8 @@ slr <- function(data,i) {
 boot.obj <- boot(data = df, statistic = slr, R = 5000)
 
 # Traceplot bootstrap estimate to compare with our bayesian approach
-plot(boot.obj$t[,1], boot.obj$t[,2], main="Bootstrap traceplot", type="l")
+plot(boot.obj$t[,1], boot.obj$t[,2], main="Bootstrap traceplot", type="l",
+     xlab="Alpha", ylab="Beta")
 ```
 
 We see that out bootstrapped joint distribution is very similar to the bayesian 
@@ -811,13 +817,13 @@ hist(sigma, breaks=25, main="Distribution of sigma")
 abline(v = 1, col="red", lwd="2")
 
 # Claim 2
-hist(boot.obj$t[,1], breaks=25, main="Distribution of alpha")
+hist(boot.obj$t[,1], breaks=25, main="Distribution of alpha", xlab="Alpha")
 abline(v = quantile(boot.obj$t[,1], 0.975), col="red", lwd="2")
 abline(v = quantile(boot.obj$t[,1], 1-0.975), col="red", lwd="2")
 
 # Claim 3
 hist(boot.obj$t[,1] + boot.obj$t[,2], breaks=25, 
-     main="Distribution of alpha + beta")
+     main="Distribution of alpha + beta", xlab="alpha + beta")
 abline(v = quantile(boot.obj$t[,1] + boot.obj$t[,2], 0.975), 
        col="red", lwd="2")
 abline(v = quantile(boot.obj$t[,1] + boot.obj$t[,2], 1-0.975), 
@@ -898,7 +904,7 @@ m <- twoD_RWMH_poisson(seir.lp, theta1=c(3.18,0.22),
                        Sigma=matrix(c(0.0003,0,0,0.0000005),2,2),
                        n=1000)
 
-plot(m[,1], m[,2], type="l")
+plot(m[,1], m[,2], type="l", xlab="R", ylab="S", main="Traceplot 2DRW")
 ```
 
 From our traceplot, we see that the random walk takes us from the
@@ -912,7 +918,8 @@ m <- twoD_RWMH_poisson(seir.lp, theta1=c(3.02,0.167),
                        Sigma=matrix(c(0.0003,0,0,0.0000005),2,2),
                        n=1000)
 
-plot(m[,1], m[,2], type="l")
+plot(m[,1], m[,2], type="l", xlab="R", ylab="S", 
+     main="Traceplot 2DRW, adjusted mean")
 ESS(m[,1])
 ESS(m[,2])
 ```
@@ -951,11 +958,11 @@ IndepMH <- function(lprob, theta=c(0, 0), sigma=diag(2), Nsamp=1000, S=1){
 }
 
 
-m <- IndepMH(seir.lp, theta=c(3.02, 0.167),
+m <- IndepMH(seir.lp, theta=c(3.019, 0.167),
              sigma=matrix(c(0.0003,0,0,0.0000005),2,2),
              Nsamp=1000, S=0.8)
 
-plot(m[,1], m[,2], type="l")
+plot(m[,1], m[,2], type="l", main="2DIRW", xlab="R", ylab="S")
 ESS(m[,1])
 ESS(m[,2])
 ```
@@ -1005,6 +1012,217 @@ df <- data.frame(R, S, Distribution)
 
 ggplot(df, aes(R, S)) + geom_point(aes(colour = Distribution))
 ```
+It's safe to say that our posterior distribution provides us with much
+information on the $R$ and $S$ values during the period of 
+\formatdate{21}{03}{2020} to \formatdate{18}{07}{2020}. 
+
+## c) Redo assignment 2 problem 4f)
+
+To do this, i reuse the code from mandatory 2 solution since the visualizations
+were better than what i previously obtained in my solution.
+
+The changes to the code below is that instead of sampling $R$ and $S$ from
+$p(\boldsymbol \theta)$ we sample from $p(\boldsymbol \theta | \boldsymbol y)$
+which we have stored in a matrix above.
+
+Also, instead of saving the plots as their own pdf they are displayed inside
+the notebook.
+
+```{r}
+nsim <- 500 # total number of simulations
+
+# CODE BELOW FROM MANDATORY 2 SOLUTION
+
+# run simulations
+M <- numeric(nsim)
+H <- matrix(0.0,nsim,365) # prepare for next point
+for(i in 1:nsim){
+  # CHANGE (choose R and S from our posterior samples)
+  ff <- seir_sim(R0max = m[i, 1], soc_dist_Rfac = m[i, 2])
+  t1 <- which(ff$dates=="2021-01-01")
+  t2 <- which(ff$dates=="2021-12-31")
+  H[i,] <- rowSums(1000000*ff$ode[t1:t2,c("HH","HC","CC")])
+  M[i] <- max(H[i,])
+}
+
+# make a data frame to facilitate plotting with dates
+df <- data.frame(t(H),dates=ff$dates[t1:t2])
+
+# in the upper plot, simply show some of the trajectories:
+plot(df$dates,df$X1,type="l",
+     xlab="dates in 2021",
+     ylab="required hospital beds",
+     main="posterior example trajetories") 
+for(i in 2:50) lines(df$dates,df[,i],col=i)
+
+# compute daily statistics for plotting
+daily.stats <- matrix(0.0,365,6)
+for(t in 1:365){
+  daily.stats[t,1] <- mean(H[,t])
+  daily.stats[t,2] <- median(H[,t])
+  daily.stats[t,3:6] <- quantile(H[,t],probs=c(0.005,0.1,0.9,0.995))
+}
+
+df2 <- data.frame(daily.stats,ff$dates[t1:t2])
+colnames(df2) <- c("mean","median","q05","q10","q90","q995","dates")
+
+plot(df2$dates,df2$mean,ylim=c(0,300),col=0,
+     xlab="dates in 2021",
+     ylab="required hospital beds",
+     main="posterior distribution representation") # simply sets up plot window
+polygon(c(df2$dates,rev(df2$dates)),c(df2$q05,rev(df2$q995)),
+        col="red",density=100)
+polygon(c(df2$dates,rev(df2$dates)),c(df2$q10,rev(df2$q90)),
+        col="blue",density=100)
+lines(df2$dates,df2$mean,lwd=2)
+lines(df2$dates,df2$median,col="green")
+legend("bottomright",lty=c(1,1,1,1),lwd=c(10,10,2,1),
+       legend=c("99%","90%","mean","median"),
+       col=c("red","blue","black","green"),)
+```
+Now, let's plot this again using the prior distribution for $R$ and $S$.
+
+```{r}
+nsim <- 500 # total number of simulations
+
+# CODE BELOW FROM MANDATORY 2 SOLUTION
+
+# run simulations
+M <- numeric(nsim)
+H <- matrix(0.0,nsim,365) # prepare for next point
+for(i in 1:nsim){
+  # CHANGE (choose R and S from our prior samples)
+  ff <- seir_sim(R0max = m2[i, 1], soc_dist_Rfac = m2[i, 2])
+  t1 <- which(ff$dates=="2021-01-01")
+  t2 <- which(ff$dates=="2021-12-31")
+  H[i,] <- rowSums(1000000*ff$ode[t1:t2,c("HH","HC","CC")])
+  M[i] <- max(H[i,])
+}
+
+# make a data frame to facilitate plotting with dates
+df <- data.frame(t(H),dates=ff$dates[t1:t2])
+
+# in the upper plot, simply show some of the trajectories:
+plot(df$dates,df$X1,type="l",
+     xlab="dates in 2021",
+     ylab="required hospital beds",
+     main="prior example trajetories") 
+for(i in 2:50) lines(df$dates,df[,i],col=i)
+
+# compute daily statistics for plotting
+daily.stats <- matrix(0.0,365,6)
+for(t in 1:365){
+  daily.stats[t,1] <- mean(H[,t])
+  daily.stats[t,2] <- median(H[,t])
+  daily.stats[t,3:6] <- quantile(H[,t],probs=c(0.005,0.1,0.9,0.995))
+}
+
+df2 <- data.frame(daily.stats,ff$dates[t1:t2])
+colnames(df2) <- c("mean","median","q05","q10","q90","q995","dates")
+
+plot(df2$dates,df2$mean,ylim=c(0,300),col=0,
+     xlab="dates in 2021",
+     ylab="required hospital beds",
+     main="prior distribution representation") # simply sets up plot window
+polygon(c(df2$dates,rev(df2$dates)),c(df2$q05,rev(df2$q995)),
+        col="red",density=100)
+polygon(c(df2$dates,rev(df2$dates)),c(df2$q10,rev(df2$q90)),
+        col="blue",density=100)
+lines(df2$dates,df2$mean,lwd=2)
+lines(df2$dates,df2$median,col="green")
+legend("bottomright",lty=c(1,1,1,1),lwd=c(10,10,2,1),
+       legend=c("99%","90%","mean","median"),
+       col=c("red","blue","black","green"),)
+```
+
+As expected, with the prior distribution chosen we get a much larger uncertainty.
+With the data we can update our beliefs of what the $R$ and $S$ values are and
+we simulate 2021 hospitalizations using these new, updated, values.
+
+## d) Calculate total beds in december, january and february
+
+Lets simulate total number of needed hospital beds in december, january and 
+february. We will simulate 500 samples of $(R, S)$ form $p(\boldsymbol \theta)$
+and the  $p(\boldsymbol \theta | \boldsymbol y)$ to see if our 
+
+```{r}
+nsim <- 500 # total number of simulations
+
+des <- matrix(0.0,nsim,31)
+jan <- matrix(0.0,nsim,31)
+feb <- matrix(0.0,nsim,28)
+
+for(i in 1:nsim){
+  # CHANGE (choose R and S from our prior samples)
+  ff <- seir_sim(R0max = m2[i, 1], soc_dist_Rfac = m2[i, 2])
+  t1 <- which(ff$dates=="2020-12-01")
+  t2 <- which(ff$dates=="2020-12-31")
+  des[i,] <- rowSums(1000000*ff$ode[t1:t2,c("HH","HC","CC")])
+
+  t1 <- which(ff$dates=="2021-01-01")
+  t2 <- which(ff$dates=="2021-01-31")
+  jan[i,] <- rowSums(1000000*ff$ode[t1:t2,c("HH","HC","CC")]) 
+  
+  t1 <- which(ff$dates=="2021-02-01")
+  t2 <- which(ff$dates=="2021-02-28")
+  feb[i,] <- rowSums(1000000*ff$ode[t1:t2,c("HH","HC","CC")])
+}
+
+# Calculate total no of hospital beds for all simulations
+priordes <- rowSums(des)
+priorjan <- rowSums(jan)
+priorfeb <- rowSums(feb)
+```
+
+Do the same for posterior
+
+```{r}
+des <- matrix(0.0,nsim,31)
+jan <- matrix(0.0,nsim,31)
+feb <- matrix(0.0,nsim,28)
+
+for(i in 1:nsim){
+  # CHANGE (choose R and S from our posterior samples)
+  ff <- seir_sim(R0max = m[i, 1], soc_dist_Rfac = m[i, 2])
+  t1 <- which(ff$dates=="2020-12-01")
+  t2 <- which(ff$dates=="2020-12-31")
+  des[i,] <- rowSums(1000000*ff$ode[t1:t2,c("HH","HC","CC")])
+
+  t1 <- which(ff$dates=="2021-01-01")
+  t2 <- which(ff$dates=="2021-01-31")
+  jan[i,] <- rowSums(1000000*ff$ode[t1:t2,c("HH","HC","CC")]) 
+  
+  t1 <- which(ff$dates=="2021-02-01")
+  t2 <- which(ff$dates=="2021-02-28")
+  feb[i,] <- rowSums(1000000*ff$ode[t1:t2,c("HH","HC","CC")])
+}
+
+# Calculate total no of hospital beds for all simulations
+postdes <- rowSums(des)
+postjan <- rowSums(jan)
+postfeb <- rowSums(feb)
+```
+
+Plot the different scenarios:
+
+```{r}
+df <- data.frame(priordes, priorjan, priorfeb, postdes, postjan, postfeb)
+boxplot(df)
+```
+
+In summary, given our knowledge of how diseases reproduce and how social 
+distancing affect the spread of the disease, we expect that the number of 
+hospital beds needed for the months of december, january and february is between 
+4000 and 6000 and in the wors case as high as 8000.
+
+If the spread of the disease and the reproduction number is similar to what 
+was observed during the period form \formatdate{21}{03}{2020} to 
+\formatdate{18}{07}{2020}, we can with much more confidence say that the
+number of needed beds is about $4284$, $5460$ and $4772$ for december, 
+january and febuary respectively. 
+
+This is, as stated above, under the assumption that the conditions are similar
+to the time frame above.
 
 \newpage
 
