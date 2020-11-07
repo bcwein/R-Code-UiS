@@ -847,6 +847,12 @@ where $\lambda(t, \boldsymbol \theta)$ is taken to be the combined
 
 ## a) Obtain MCMC samples targeting $p(\boldsymbol \theta | \boldsymbol y)$
 
+Let's run a 2D random walk on the posterior and see if we are able to converge
+on some value. We choose the mean vector that we found in assignment 2 problem 
+4 c for tuning the theta variable, the code and covariance matrix is borrowed 
+from the tip in the assignment text.
+
+
 ```{r}
 source("seir_mcmc_funs.R")
 
@@ -889,12 +895,93 @@ twoD_RWMH_poisson <- function(lprob, # log-probability density kernel
 
 # Tune model with mean vector from assignment 2
 m <- twoD_RWMH_poisson(seir.lp, theta1=c(3.18,0.22),
-                       Sigma=matrix(c(0.0003,0,0,0.0000005),2,2))
+                       Sigma=matrix(c(0.0003,0,0,0.0000005),2,2),
+                       n=1000)
+
+plot(m[,1], m[,2], type="l")
 ```
 
-We chose the mean vector that we found in assignment 2 problem 4 c for tuning 
-the theta variable, the code and covariance matrix is borrowed from the tip
-in the assignment text.
+From our traceplot, we see that the random walk takes us from the
+mean of the posterior and it converges down on $3.0 < R < 3.05$ and 
+$S \approx 0.17$. Let's start our random walk with a mean vector closer to
+these values and run the code again.
+
+```{r}
+# Tune model with mean vector from assignment 2
+m <- twoD_RWMH_poisson(seir.lp, theta1=c(3.02,0.167),
+                       Sigma=matrix(c(0.0003,0,0,0.0000005),2,2),
+                       n=1000)
+
+plot(m[,1], m[,2], type="l")
+ESS(m[,1])
+ESS(m[,2])
+```
+Still, our sample size is relatively small, let's use our independent random walk
+implementation instead.
+
+```{r}
+# Independent sampler
+IndepMH <- function(lprob, theta=c(0, 0), sigma=diag(2), Nsamp=1000){
+  # Allocate space
+  res <- matrix(0, Nsamp, 2)
+  # Set initial values
+  res[1,] <- theta
+  # Old importance
+  pold <- lprob(theta) - dmvnorm(theta, mean=theta ,sigma=sigma, log=TRUE)
+  # No of accept
+  Nacc <- 0
+  for (i in 2:Nsamp){
+    # Sample theta from multivariate normal with scaled sigma
+    new <- rmvnorm(1, theta, sigma)
+    # Importance of new theta
+    pnew <- lprob(new) - dmvnorm(new, mean=theta, sigma=sigma, log=TRUE)
+    frac <- exp(min(0.0, pnew-pold))
+    if(runif(1)<frac && is.finite(frac)){
+      # Accept
+      res[i,] <- new
+      pold <- pnew
+      Nacc <- Nacc+1
+    } else {
+      # Reject
+      res[i,] <- res[(i-1),]
+    }
+  }
+  print(paste0("accept rate : ",Nacc/Nsamp))
+  return(res)
+}
+
+m <- IndepMH(seir.lp, theta=c(3.02, 0.167),
+             sigma=0.6*matrix(c(0.0003,0,0,0.0000005),2,2),
+             Nsamp=1000)
+
+plot(m[,1], m[,2], type="l")
+ESS(m[,1])
+ESS(m[,2])
+```
+
+## b) Comparing prior and posterior
+
+```{r}
+#
+# inverse transform algorithm
+#
+rltrunc_normal <- function(n,l,mu,sigma){
+  Fl <- pnorm(q=l,mean=mu,sd=sigma)
+  return(qnorm(p=(Fl + runif(n)*(1.0-Fl)),mean=mu,sd=sigma))
+}
+
+#
+# simulate random variates from joint distribution
+#
+rRS <- function(n){
+  R <- rltrunc_normal(n,1.8,2.2,1.5)
+  S <- runif(n,min=0.5/R,0.8/R)
+  return(cbind(R,S))
+}
+
+m2 <- rRS(200)
+plot(m2[,1], m2[,2], type="l")
+```
 
 \newpage
 
