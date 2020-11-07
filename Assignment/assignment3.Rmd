@@ -921,7 +921,7 @@ implementation instead.
 
 ```{r}
 # Independent sampler
-IndepMH <- function(lprob, theta=c(0, 0), sigma=diag(2), Nsamp=1000){
+IndepMH <- function(lprob, theta=c(0, 0), sigma=diag(2), Nsamp=1000, S=1){
   # Allocate space
   res <- matrix(0, Nsamp, 2)
   # Set initial values
@@ -932,7 +932,7 @@ IndepMH <- function(lprob, theta=c(0, 0), sigma=diag(2), Nsamp=1000){
   Nacc <- 0
   for (i in 2:Nsamp){
     # Sample theta from multivariate normal with scaled sigma
-    new <- rmvnorm(1, theta, sigma)
+    new <- rmvnorm(1, theta, S*sigma)
     # Importance of new theta
     pnew <- lprob(new) - dmvnorm(new, mean=theta, sigma=sigma, log=TRUE)
     frac <- exp(min(0.0, pnew-pold))
@@ -950,9 +950,10 @@ IndepMH <- function(lprob, theta=c(0, 0), sigma=diag(2), Nsamp=1000){
   return(res)
 }
 
+
 m <- IndepMH(seir.lp, theta=c(3.02, 0.167),
-             sigma=0.6*matrix(c(0.0003,0,0,0.0000005),2,2),
-             Nsamp=1000)
+             sigma=matrix(c(0.0003,0,0,0.0000005),2,2),
+             Nsamp=1000, S=0.8)
 
 plot(m[,1], m[,2], type="l")
 ESS(m[,1])
