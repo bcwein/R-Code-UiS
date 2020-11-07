@@ -960,11 +960,21 @@ ESS(m[,1])
 ESS(m[,2])
 ```
 
+Finally we have a ESS of above 200 for 1000 samples. We see that our 
+distribution is quite well explored using independent random walk.
+
 ## b) Comparing prior and posterior
 
+Let's sample from the prior distribution and posterior distribution
+and plot both from in a colored scatterplot to see how our bayesian analysis
+has updated our belief in $R$ and $S$.
+
 ```{r}
+library(ggplot2)
+
 #
 # inverse transform algorithm
+# (borrowed from mandatory 2 to sample R)
 #
 rltrunc_normal <- function(n,l,mu,sigma){
   Fl <- pnorm(q=l,mean=mu,sd=sigma)
@@ -973,6 +983,7 @@ rltrunc_normal <- function(n,l,mu,sigma){
 
 #
 # simulate random variates from joint distribution
+# (borrowed from mandatory to sample prior)
 #
 rRS <- function(n){
   R <- rltrunc_normal(n,1.8,2.2,1.5)
@@ -980,8 +991,19 @@ rRS <- function(n){
   return(cbind(R,S))
 }
 
-m2 <- rRS(200)
-plot(m2[,1], m2[,2], type="l")
+# Sample 1000 priors
+m2 <- rRS(1000)
+
+# Create vectors for dataframe
+R <- c(m[,1], m2[,1])
+S <- c(m[,2], m2[,2])
+Distribution <- c(replicate(length(m[,1]), "Posterior"), 
+                  replicate(length(m2[,1]), "Prior"))
+
+# Create dataframe
+df <- data.frame(R, S, Distribution)
+
+ggplot(df, aes(R, S)) + geom_point(aes(colour = Distribution))
 ```
 
 \newpage
