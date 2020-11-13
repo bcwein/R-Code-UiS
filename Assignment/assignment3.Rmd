@@ -468,10 +468,11 @@ $$
 }\right)
 $$
 
-To calculate the posterior of $\alpha$ we see by inspection that the log-density
-kernel is possibly on the form 
+To calculate the posterior of $\alpha$ we see by inspection that the posterior 
+log-density kernel is possibly on the form 
 $\log \pi(\alpha | \beta, \tau, \boldsymbol{y}) = a + b\alpha + c\alpha^2$ which 
-tells us the distribution is normal and that the constant $a$ is unimportant.
+tells us the posterior distribution is normal and that the constant $a$ is 
+unimportant.
 
 Let's calculate $\log \pi(\alpha | \beta, \tau, \boldsymbol y)$.
 
@@ -606,7 +607,7 @@ gibbs <- function(x, y, theta=c(1.0, -1.2, 1.0), Nsamp=10000) {
       k <- k+1
       
        # Block 3. Tau
-      gammascale <- 1/(0.5*sum((y - theta[1] - theta[2]*x)^2))
+      gammascale <- 1/(0.5*sum((y - theta[1] - theta[2]*x)^2)) + 1
       theta[3] <- rgamma(1, gammashape, scale = gammascale)
       # store state
       res[k, ] <- theta
@@ -700,7 +701,7 @@ gibbs_multi <- function(x, y, theta=c(1.0, -1.2, 1.0), Nsamp=10000) {
     k <- k+1
     
      # Block 2. Tau
-    gammascale <- 1/(0.5*sum((y - theta[1] - theta[2]*x)^2))
+    gammascale <- 1/(0.5*sum((y - theta[1] - theta[2]*x)^2)) + 1
     theta[3] <- rgamma(1, gammashape, scale = gammascale)
     # store state
     res[k, ] <- theta
@@ -973,7 +974,7 @@ distribution is quite well explored using independent random walk.
 ## b) Comparing prior and posterior
 
 Let's sample from the prior distribution and posterior distribution
-and plot both from in a colored scatterplot to see how our bayesian analysis
+and plot both in a colored scatterplot to see how our bayesian analysis
 has updated our belief in $R$ and $S$.
 
 ```{r}
